@@ -1,1 +1,0 @@
-python3 main_demo.py --config_file ./config/config.json 2>&1 | tee -a speaker.log
