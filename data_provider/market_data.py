@@ -52,17 +52,19 @@ class DataProvider:
         
         
         # 设置双索引 
-        coll = col.append('date')
-        coll = coll.append('code')
+        coll = col
+        coll.append('date')
+        coll.append('code')
         dfs_double_index = pd.DataFrame(columns = coll)
         for stock in self.target_stocks_list:
             df_temp = dfs[stock]
             df_temp['date'] = list(df_temp.index.values)
             df_temp['code'] = stock
             dfs_double_index=pd.concat([dfs_double_index, df_temp])         
+        dfs_double_index = dfs_double_index.sort_values.sort_values(by=['date','code'],ascending=[True,True])
         dfs_double_index = dfs_double_index.set_index(['date','code'])
         # 存为csv和pkl格式
-        dfs_double_index.to_csv("market data with double index.csv", index=False)
+        dfs_double_index.to_csv("market data with double index.csv")
         dfs_double_index.to_pickle("market data with double index.pkl")
 
 
