@@ -3,7 +3,7 @@ from jqdatasdk import auth, get_index_stocks, get_price
 import time
 import numpy as np
 import click
-from data_provider.config import data_config
+from config import data_config
 import json
 import pandas as pd
 
@@ -77,7 +77,7 @@ class DataProvider:
 
 ##TODO 加上主函数入口 编写主函数 以免多进程&线程时出现问题
 @click.command()
-@click.option("--config_file", help="the config file for DataProvider", default="./config/config.json")
+@click.option("--config_file", help="the config file for DataProvider", default="../config/config.json")
 def main(config_file):
     with open(config_file) as f:
         data_provider_config = json.load(f)
