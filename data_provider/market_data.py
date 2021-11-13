@@ -22,6 +22,8 @@ class DataProvider:
         self.end_date = time.strftime('%Y-%m-%d', time.localtime(time.time()))
         self.jq_account = data_provider_config['jq_account']
         self.jq_password = data_provider_config['jq_password']
+        self.market_data_file = data_config.market_data_file
+        self.trading_dates_file = data_config.trading_dates_file
         self.legal_type_list = data_config.legal_type_list
         self.stock_index_list = data_config.stock_index_list
         self.frequency = data_config.frequency
@@ -48,11 +50,11 @@ class DataProvider:
         glog.info('Stock pool acquired.')
 
         # 字典dfs的关键词是股票代码，其对应值为两年的开盘、收盘等的dataframe
-        if os.path.exists("./MarketData/market_data_with_double_index.pkl"):
+        if os.path.exists(self.market_data_file):
             # 如果已有数据，则删除最开始一天，跟新最新一天
             glog.info('Update the latest day.')
             # 读取数据
-            dfs_double_index = pickle.load(open('./MarketData/market_data_with_double_index.pkl',"rb+"))
+            dfs_double_index = pickle.load(open(self.market_data_file, 'rb+'))
             # 得到日期列
             old_date = dfs_double_index.reset_index()['date']
             # 删除删除最开始一天数据
@@ -60,7 +62,7 @@ class DataProvider:
             # 得到原有数据的最后一天的日期
             yesterday = str(old_date.values[-1])[0:10]
             # 读取交易日历
-            trading_dates = pd.read_csv('../data_deploy/TradingDates.csv')
+            trading_dates = pd.read_csv(self.trading_dates_file)
             # 定位对应日期，得到最新日期及其对应的股票数据
             yesterday_location = trading_dates[(trading_dates.trading_date == yesterday)].index.tolist()[0]
             new_day = trading_dates.loc[yesterday_location+1,'trading_date']
@@ -96,9 +98,8 @@ class DataProvider:
             dfs_double_index = dfs_double_index.set_index(['date', 'code'])
 
         glog.info('Data obtained.')
-        # 存为csv和pkl格式
-        dfs_double_index.to_csv("./MarketData/market_data_with_double_index.csv", index=True)
-        dfs_double_index.to_pickle("./MarketData/market_data_with_double_index.pkl")
+        # 存为pkl格式
+        dfs_double_index.to_pickle(self.market_data_file)
         glog.info('Data stored.')
 
 
