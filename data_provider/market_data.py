@@ -45,12 +45,14 @@ class DataProvider:
         for stock_index_name in self.stock_index_list:
             stock_index_data = get_index_stocks(stock_index_name)
             self.target_stocks_list += stock_index_data
+        glog.info('Stock pool acquired.')
 
         # 字典dfs的关键词是股票代码，其对应值为两年的开盘、收盘等的dataframe
-        if os.path.exists("./data_provider/MarketData/market_data_with_double_index.pkl"):
+        if os.path.exists("./MarketData/market_data_with_double_index.pkl"):
             # 如果已有数据，则删除最开始一天，跟新最新一天
+            glog.info('Update the latest day.')
             # 读取数据
-            dfs_double_index = pickle.load(open('./data_provider/MarketData/market_data_with_double_index.pkl',"rb+"))
+            dfs_double_index = pickle.load(open('./MarketData/market_data_with_double_index.pkl',"rb+"))
             # 得到日期列
             old_date = dfs_double_index.reset_index()['date']
             # 删除删除最开始一天数据
@@ -58,7 +60,7 @@ class DataProvider:
             # 得到原有数据的最后一天的日期
             yesterday = str(old_date.values[-1])[0:10]
             # 读取交易日历
-            trading_dates = pd.read_csv('./data_deploy/TradingDates.csv')
+            trading_dates = pd.read_csv('../data_deploy/TradingDates.csv')
             # 定位对应日期，得到最新日期及其对应的股票数据
             yesterday_location = trading_dates[(trading_dates.trading_date == yesterday)].index.tolist()[0]
             new_day = trading_dates.loc[yesterday_location+1,'trading_date']
@@ -66,18 +68,19 @@ class DataProvider:
             new_day_data = new_day_data.rename(columns={'time': 'date'}) # jqdatasdk得到日期的列名为time，为保持一致性，改为date
             new_day_data = new_day_data.set_index(['date', 'code']) # 设置双索引
             # 清洗数据
-            new_day_data = new_day_data.applymap(_replace2nan)
+            new_day_data = new_day_data.applymap(self._replace2nan)
             # 将新数据数据跟新到原有的整个数据中
             dfs_double_index = pd.concat([dfs_double_index, new_day_data])
         else:
             # 若无已有数据，则直接获取最新数据
+            glog.info('Get all market data.')
             dfs = {
                 self.target_stocks_list[i]: get_price(security=self.target_stocks_list[i], start_date=self.start_date,
                                                       end_date=self.end_date, frequency=self.frequency)
                 for i in range(len(self.target_stocks_list))}
             # 清洗数据
             for (stock_index_name, df) in dfs.items():
-                dfs[stock_index_name] = df.applymap(_replace2nan)
+                dfs[stock_index_name] = df.applymap(self._replace2nan)
             col = list(dfs[self.target_stocks_list[0]].columns.values)
             # 设置双索引
             coll = col
@@ -89,12 +92,14 @@ class DataProvider:
                 df_temp['date'] = list(df_temp.index.values)
                 df_temp['code'] = stock
                 dfs_double_index = pd.concat([dfs_double_index, df_temp])
-            dfs_double_index = dfs_double_index.sort_values.sort_values(by=['date', 'code'], ascending=[True, True])
+            dfs_double_index = dfs_double_index.sort_values(by=['date', 'code'], ascending=[True, True])
             dfs_double_index = dfs_double_index.set_index(['date', 'code'])
 
+        glog.info('Data obtained.')
         # 存为csv和pkl格式
-        dfs_double_index.to_csv("./market_data_with_double_index/market_data_with_double_index.csv")
-        dfs_double_index.to_pickle("./market_data_with_double_index/market_data_with_double_index.pkl")
+        dfs_double_index.to_csv("./MarketData/market_data_with_double_index.csv", index=True)
+        dfs_double_index.to_pickle("./MarketData/market_data_with_double_index.pkl")
+        glog.info('Data stored.')
 
 
 
@@ -110,12 +115,16 @@ class DataProvider:
 def main(config_file):
     with open(config_file) as f:
         data_provider_config = json.load(f)
+    glog.info('loaded config.json.')
     data_provider = DataProvider(data_provider_config)
+    glog.info('start get_data.')
     data_provider.get_data()
     data_provider.data_to_mongo()
+    glog.info('End.')
 
 
 if __name__ == "__main__":
-    #glog.indo glog.warning
-    logging.basicConfig(filename='my.log', level=logging.DEBUG, format=LOG_FORMAT, datefmt=DATE_FORMAT)
+    glog.info('Start program execution.')
     main()
+    
+
