@@ -4,6 +4,7 @@ import time
 import numpy as np
 import click
 import sys
+
 sys.path.append('../')
 from config import data_config
 import json
@@ -11,8 +12,6 @@ import pandas as pd
 import glog
 import os
 import pickle
-
-
 
 
 class DataProvider:
@@ -30,7 +29,7 @@ class DataProvider:
         self.target_stocks_list = []
         auth(self.jq_account, self.jq_password)
 
-
+    # TODO 可以把这个部分直接兼容到数据清洗模块
     # 处理非法字符，即非浮点整型数的字符串类及inf。
     def _replace2nan(self, x):
         if type(x) in self.legal_type_list:
@@ -40,7 +39,6 @@ class DataProvider:
                 return x
         else:
             return np.nan
-
 
     # 得到数据
     def get_data(self):
@@ -65,10 +63,11 @@ class DataProvider:
             trading_dates = pd.read_csv(self.trading_dates_file)
             # 定位对应日期，得到最新日期及其对应的股票数据
             yesterday_location = trading_dates[(trading_dates.trading_date == yesterday)].index.tolist()[0]
-            new_day = trading_dates.loc[yesterday_location+1,'trading_date']
-            new_day_data = get_price(security=self.target_stocks_list, start_date=new_day, end_date=new_day, frequency=self.frequency)
-            new_day_data = new_day_data.rename(columns={'time': 'date'}) # jqdatasdk得到日期的列名为time，为保持一致性，改为date
-            new_day_data = new_day_data.set_index(['date', 'code']) # 设置双索引
+            new_day = trading_dates.loc[yesterday_location + 1, 'trading_date']
+            new_day_data = get_price(security=self.target_stocks_list, start_date=new_day, end_date=new_day,
+                                     frequency=self.frequency)
+            new_day_data = new_day_data.rename(columns={'time': 'date'})  # jqdatasdk得到日期的列名为time，为保持一致性，改为date
+            new_day_data = new_day_data.set_index(['date', 'code'])  # 设置双索引
             # 清洗数据
             new_day_data = new_day_data.applymap(self._replace2nan)
             # 将新数据数据跟新到原有的整个数据中
@@ -102,13 +101,8 @@ class DataProvider:
         dfs_double_index.to_pickle(self.market_data_file)
         glog.info('Data stored.')
 
-
-
-
-
     def data_to_mongo(self):
         pass
-
 
 
 @click.command()
@@ -127,5 +121,3 @@ def main(config_file):
 if __name__ == "__main__":
     glog.info('Start program execution.')
     main()
-    
-
