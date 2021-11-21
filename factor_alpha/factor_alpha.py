@@ -1,3 +1,4 @@
+import os.path
 
 import qlib
 import pandas as pd
@@ -5,7 +6,8 @@ from config import alpha_config
 from qlib.data import D
 from qlib.contrib.data.handler import Alpha158
 from qlib.contrib.data.handler import Alpha360
-import click
+import os
+import shutil
 
 
 class FactorAlpha:
@@ -18,8 +20,19 @@ class FactorAlpha:
         print('init')
 
     def get_data(self):
-        qlib.init(provider_uri=alpha_config.provider_uri)
-        self.instruments=D.instruments(market='csi100')
+        os.makedirs('./csv_data')
+        os.makedirs('./my_data')
+        df1=pd.read_pickle('./market_data_with_double_index.pkl')
+        df2=df1.sort_index(level=1)
+        market_data=df2.swaplevel('date','code')
+        grouped=market_data.groupby('code')
+        for name,group in grouped:
+            csv_data=group.reset_index().drop(columns='code')
+            csv_data.to_csv(os.path.join(r'./csv_data',name.replace('.','')+'.csv'),sep=',',header=True,index=False)
+        os.system('python D:/Anaconda3/Lib/site-packages/qlib/scripts/dump_bin.py dump_all --csv_path ./csv_data --qlib_dir ./my_data include_fields open,close,high,volume,money --date_field_name date')
+
+        qlib.init(provider_uri='./my_data')
+        self.instruments=D.instruments(market='all')
         print('get_data')
         return self.instruments
 
@@ -65,10 +78,13 @@ class FactorAlpha:
 def main():
     alpha=FactorAlpha()
     alpha.get_data()
-    factor_alpha=pd.merge(alpha.get_alpha158(),alpha.get_alpha360(),left_index=True,right_index=True)
-    print(factor_alpha)
-    #print(alpha.get_alpha158())
+    #factor_alpha=pd.merge(alpha.get_alpha158(),alpha.get_alpha360(),left_index=True,right_index=True)
+    #print(factor_alpha)
+    print(alpha.get_alpha158())
     #print(alpha.get_alpha360())
+    shutil.rmtree("./csv_data")
+    shutil.rmtree("./my_data")
+
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':

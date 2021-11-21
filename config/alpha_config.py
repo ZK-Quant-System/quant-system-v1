@@ -1,5 +1,4 @@
 
-provider_uri="C:/Users/Always/.qlib/qlib_data/cn_data"
 start_time='2020-01-01'
 end_time='2020-05-30'
 fit_start_time='2020-01-01'
