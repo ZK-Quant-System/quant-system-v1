@@ -41,7 +41,7 @@ class FactorAlpha:
 
         qlib.init(provider_uri='./my_data')
         self.instruments=D.instruments(market='all')
-        glog.info("finish get_data")
+        glog.info("get_data finished")
 
     def get_alpha101(self):
         pass
