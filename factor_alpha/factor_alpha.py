@@ -21,27 +21,25 @@ class FactorAlpha:
         glog.info("init finished")
 
     def get_data(self):
-        if os.path.exists('./csv_data'):
-            shutil.rmtree('./csv_data')
-        if os.path.exists('./my_data'):
-            shutil.rmtree('./my_data')
-        os.makedirs('./csv_data')
-        os.makedirs('./my_data')
+        if not os.path.exists(alpha_config.csv_dir):
+            os.makedirs(alpha_config.csv_dir)
+        if not os.path.exists(alpha_config.qlib_dir):
+            os.makedirs(alpha_config.qlib_dir)
 
         df_pickle=pd.read_pickle(alpha_config.market_data)
         market_data=df_pickle.sort_index(level=1).swaplevel('date','code')
         grouped=market_data.groupby('code')
         for name,group in grouped:
             csv_data=group.reset_index().drop(columns='code')
-            csv_data.to_csv(os.path.join(r'./csv_data',name.replace('.','')+'.csv'),sep=',',header=True,index=False)
-        os.system('python D:/Anaconda3/Lib/site-packages/qlib/scripts/dump_bin.py dump_all --csv_path ./csv_data --qlib_dir ./my_data include_fields open,close,high,volume,money --date_field_name date')
+            csv_data.to_csv(os.path.join(alpha_config.csv_dir,name.replace('.','')+'.csv'),sep=',',header=True,index=False)
+        os.system(f'python {alpha_config.dump_bin } dump_all --csv_path {alpha_config.csv_dir} --qlib_dir {alpha_config.qlib_dir} include_fields {alpha_config.include_fields} --date_field_name {alpha_config.column_date}')
         #调用dump_bin.py将csv格式数据转化为qlib格式，dump_bin.py的路径一般为”qlib/scripts/dump_bin.py“
         #--csv_path --qlib_dir分别后跟csv所在路径、qlib格式数据输出所在路径；include_fields 后跟待转换的列
         #--date_field_name date 数据必须含有时间序列并标注列名；--symbol_field_name symbol 数据若含有股票代码列须标注并且代码不可含‘.’等字符
 
-        qlib.init(provider_uri='./my_data')
+        qlib.init(provider_uri=alpha_config.qlib_dir)
         self.instruments=D.instruments(market='all')
-        glog.info("finish get_data")
+        glog.info("get_data finished")
 
     def get_alpha101(self):
         pass
@@ -87,8 +85,8 @@ def main():
     alpha.get_data()
     factor_alpha=pd.merge(alpha.get_alpha158(),alpha.get_alpha360(),left_index=True,right_index=True)
     factor_alpha.to_pickle(alpha_config.factor_alpha)
-    shutil.rmtree("./csv_data")
-    shutil.rmtree("./my_data")
+    shutil.rmtree(alpha_config.csv_dir)
+    shutil.rmtree(alpha_config.qlib_dir)
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
