@@ -1,7 +1,7 @@
 market_data='D:/QUANT/data/market_data_with_double_index.pkl'
 factor_alpha='D:/QUANT/data/factor_alpha.pkl'
 csv_dir='./csv_data'
-qlibi_dir='./my_data'
+qlib_dir='./my_data'
 #转换为qlib格式
 dump_bin='D:/Anaconda3/Lib/site-packages/qlib/scripts/dump_bin.py'
 include_fields='open,close,high,volume,money'
