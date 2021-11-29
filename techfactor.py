@@ -2,7 +2,7 @@ import pickle
 import pandas as pd
 import glog
 import talib
-import tech_config
+from config import tech_config
 
 
 class TechFactors:
