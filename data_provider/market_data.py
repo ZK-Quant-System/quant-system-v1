@@ -4,8 +4,10 @@ import time
 import numpy as np
 import click
 import sys
+import os.path as op
 
-sys.path.append('../')
+work_path=op.dirname(op.dirname(op.realpath(__file__)))
+sys.path.append(work_path)
 from config import data_config
 import json
 import pandas as pd
@@ -106,7 +108,7 @@ class DataProvider:
 
 
 @click.command()
-@click.option("--config_file", help="the config file for DataProvider", default="../config/config.json")
+@click.option("--config_file", help="the config file for DataProvider", default=work_path+"/config/config.json")
 def main(config_file):
     with open(config_file) as f:
         data_provider_config = json.load(f)
