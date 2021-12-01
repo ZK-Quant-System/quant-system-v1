@@ -3,6 +3,9 @@ import glog
 import os
 import shutil
 import pandas as pd
+
+work_path=os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+sys.path.append(work_path)
 from config import alpha_config
 import qlib
 from qlib.data import D

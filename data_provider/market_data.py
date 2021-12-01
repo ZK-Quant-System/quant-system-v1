@@ -4,9 +4,9 @@ import time
 import numpy as np
 import click
 import sys
-import os.path as op
+import os.path
 
-work_path=op.dirname(op.dirname(op.realpath(__file__)))
+work_path=os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(work_path)
 from config import data_config
 import json

@@ -2,6 +2,10 @@ import pickle
 import pandas as pd
 import glog
 import talib
+
+import os.path
+work_path=os.path.dirname(os.path.realpath(__file__))
+sys.path.append(work_path)
 from config import tech_config
 
 
