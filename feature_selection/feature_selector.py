@@ -4,7 +4,11 @@ from scipy.stats import pearsonr
 import glog
 from functools import partial
 from sklearn.feature_selection import VarianceThreshold, SelectKBest, \
-    SelectPercentile, f_regression, mutual_info_regression
+    SelectPercentile, f_regression, mutual_info_regression, SelectFromModel
+from sklearn.linear_model import Ridge, Lasso, ElasticNet
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import AdaBoostRegressor, RandomForestRegressor
+from lightgbm.sklearn import LGBMRegressor
 
 
 class FeatureSelector:
@@ -27,6 +31,20 @@ class FeatureSelector:
         sorted_result = self.__get_sorted_values(df_feature, selector, scores)
 
         return df_selected, sorted_result
+
+    def __embedded_selector(self, df_feature, df_label, estimator, k_highest, percentile,
+                            threshold, prefit, scores):
+        if k_highest:
+            max_features = k_highest
+            threshold = float("-inf")
+        if percentile:
+            max_features = round((percentile / 100) * df_feature.shape[1])
+            threshold = float("-inf")
+
+        selector = SelectFromModel(estimator, threshold=threshold, max_features=max_features, prefit=prefit)
+        result = self.__get_selector_result(selector, df_feature, df_label, scores="estimator_." + scores)
+
+        return result
 
     def variance_selector(self, df_feature: pd.DataFrame, df_label: pd.Series,
                           threshold: float = None, k_highest: int = None, percentile: int = None):
@@ -189,8 +207,137 @@ class FeatureSelector:
         result = self.__get_selector_result(selector, df_feature, df_label)
         return result
 
+    def embedded_ridge(self, df_feature: pd.DataFrame, df_label: pd.Series, alpha: float = 1.0, fit_intercept=False,
+                       random_state=None, normalize=False, k_highest=None, percentile=None, threshold='mean'):
+
+        estimator = Ridge(alpha=alpha,
+                          normalize=normalize,
+                          random_state=random_state,
+                          fit_intercept=fit_intercept)
+
+        result = self.__embedded_selector(df_feature, df_label,
+                                          estimator=estimator,
+                                          k_highest=k_highest,
+                                          percentile=percentile,
+                                          threshold=threshold,
+                                          prefit=False,
+                                          scores="coef_")
+        return result
+
+    def embedded_lasso(self, df_feature: pd.DataFrame, df_label: pd.Series, alpha: float = 1.0, fit_intercept=False,
+                       random_state=None, normalize=False, k_highest=None, percentile=None, threshold='mean'):
+
+        estimator = Lasso(alpha=alpha,
+                          fit_intercept=fit_intercept,
+                          normalize=normalize,
+                          random_state=random_state)
+
+        result = self.__embedded_selector(df_feature, df_label,
+                                          estimator=estimator,
+                                          k_highest=k_highest,
+                                          percentile=percentile,
+                                          threshold=threshold,
+                                          prefit=False,
+                                          scores="coef_")
+        return result
+
+    def embedded_elastic_net(self, df_feature: pd.DataFrame, df_label: pd.Series, alpha: float = 1.0,
+                             l1_ratio: float = 0.5, fit_intercept=False, random_state=None,
+                             normalize=False, k_highest=None, percentile=None, threshold='mean'):
+
+        estimator = ElasticNet(alpha=alpha,
+                               l1_ratio=l1_ratio,
+                               fit_intercept=fit_intercept,
+                               normalize=normalize,
+                               random_state=random_state)
+
+        result = self.__embedded_selector(df_feature, df_label,
+                                          estimator=estimator,
+                                          k_highest=k_highest,
+                                          percentile=percentile,
+                                          threshold=threshold,
+                                          prefit=False,
+                                          scores="coef_")
+        return result
+
+    def embedded_decision_tree_regressor(self, df_feature: pd.DataFrame, df_label: pd.Series, criterion='mse',
+                                         splitter='best', max_depth=None, min_samples_split=2,
+                                         min_samples_leaf=1, random_state=None, max_leaf_nodes=None,
+                                         k_highest=None, percentile=None, threshold='mean'):
+        estimator = DecisionTreeRegressor(criterion=criterion, splitter=splitter, max_depth=max_depth,
+                                          min_samples_split=min_samples_split, min_samples_leaf=min_samples_leaf,
+                                          random_state=random_state, max_leaf_nodes=max_leaf_nodes,
+                                          )
+
+        result = self.__embedded_selector(df_feature, df_label,
+                                          estimator=estimator,
+                                          k_highest=k_highest,
+                                          percentile=percentile,
+                                          threshold=threshold,
+                                          prefit=False,
+                                          scores="feature_importances_")
+        return result
+
+    def embedded_adaboost_regressor(self, df_feature: pd.DataFrame, df_label: pd.Series, loss='square',
+                                     learning_rate=1.0, n_estimators=50, random_state=None,
+                                     k_highest=None, percentile=None, threshold='mean'):
+
+        estimator = AdaBoostRegressor(n_estimators=n_estimators, learning_rate=learning_rate, loss=loss,
+                                      random_state=random_state)
+
+        result = self.__embedded_selector(df_feature, df_label,
+                                          estimator=estimator,
+                                          k_highest=k_highest,
+                                          percentile=percentile,
+                                          threshold=threshold,
+                                          prefit=False,
+                                          scores="feature_importances_")
+        return result
+
+    def embedded_random_forest_regressor(self, df_feature: pd.DataFrame, df_label: pd.Series,
+                                          criterion='mse', min_samples_leaf=1, min_samples_split=2,
+                                          max_depth=None, n_estimators=50, random_state=None, k_highest=None,
+                                          percentile=None, threshold='mean'):
+
+        estimator = RandomForestRegressor(n_estimators=n_estimators, max_depth=max_depth, criterion=criterion,
+                                          min_samples_split=min_samples_split, min_samples_leaf=min_samples_leaf,
+                                          random_state=random_state)
+
+        result = self.__embedded_selector(df_feature, df_label,
+                                          estimator=estimator,
+                                          k_highest=k_highest,
+                                          percentile=percentile,
+                                          threshold=threshold,
+                                          prefit=False,
+                                          scores="feature_importances_")
+        return result
+
+    def embedded_lgb_regressor(self, df_feature: pd.DataFrame, df_label: pd.Series,
+                                boosting_type="gbdt", num_leaves=31, n_estimators=100, learning_rate=1.0,
+                                random_state=None, objective="regression", importance_type="gain",
+                                k_highest=None, percentile=None, threshold='mean'):
+
+        df_new = df_feature.copy(deep=True)
+        df_new.columns = np.arange(df_new.shape[1])
+
+        estimator = LGBMRegressor(boosting_type=boosting_type, num_leaves=num_leaves,
+                                  learning_rate=learning_rate, n_estimators=n_estimators,
+                                  objective=objective, random_state=random_state,
+                                  importance_type=importance_type)
+
+        result = self.__embedded_selector(df_feature, df_label,
+                                          estimator=estimator,
+                                          k_highest=k_highest,
+                                          percentile=percentile,
+                                          threshold=threshold,
+                                          prefit=False,
+                                          scores="feature_importances_")
+        return result
+
 
 if __name__ == "__main__":
     fs = FeatureSelector()
-    df_selected, sorted_result = fs.mi_selector(df_feature=fs.data.iloc[:, :-1], df_label=fs.data.iloc[:, -1], percentile=1)
+    df_selected, sorted_result = fs.embedded_lgb_regressor(df_feature=fs.data.iloc[:, :-1],
+                                                                      df_label=fs.data.iloc[:, -1],
+                                                                      k_highest=1)
     print(df_selected, sorted_result)
