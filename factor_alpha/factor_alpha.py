@@ -4,6 +4,7 @@ import os
 import shutil
 import pandas as pd
 
+import sys
 work_path=os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(work_path)
 from config import alpha_config
@@ -35,7 +36,7 @@ class FactorAlpha:
         for name,group in grouped:
             csv_data=group.reset_index().drop(columns='code')
             csv_data.to_csv(os.path.join(alpha_config.csv_dir,name.replace('.','')+'.csv'),sep=',',header=True,index=False)
-        os.system(f'python {alpha_config.dump_bin } dump_all --csv_path {alpha_config.csv_dir} --qlib_dir {alpha_config.qlib_dir} include_fields {alpha_config.include_fields} --date_field_name {alpha_config.column_date}')
+        os.system(f'python3 {alpha_config.dump_bin } dump_all --csv_path {alpha_config.csv_dir} --qlib_dir {alpha_config.qlib_dir} include_fields {alpha_config.include_fields} --date_field_name {alpha_config.column_date}')
         #调用dump_bin.py将csv格式数据转化为qlib格式，dump_bin.py的路径一般为”qlib/scripts/dump_bin.py“
         #--csv_path --qlib_dir分别后跟csv所在路径、qlib格式数据输出所在路径；include_fields 后跟待转换的列
         #--date_field_name date 数据必须含有时间序列并标注列名；--symbol_field_name symbol 数据若含有股票代码列须标注并且代码不可含‘.’等字符
