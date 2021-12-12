@@ -1,5 +1,5 @@
 market_data='D:/QUANT/data/market_data_with_double_index.pkl'
-factor_alpha='D:/QUANT/data/factor_alpha.pkl'
+factor_alpha='D:/QUANT/data/factor_alpha_1.pkl'
 csv_dir='./csv_data'
 qlib_dir='./my_data'
 #转换为qlib格式
@@ -9,7 +9,7 @@ column_date='date'
 column_stockid=''
 #
 start_time='2020-01-01'
-end_time='2020-05-30'
+end_time='2020-01-30'
 fit_start_time='2020-01-01'
-fit_end_time='2020-05-30'
+fit_end_time='2020-01-30'
 freq='day'
