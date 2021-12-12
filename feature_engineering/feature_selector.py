@@ -13,7 +13,7 @@ from lightgbm.sklearn import LGBMRegressor
 
 class FeatureSelector:
     def __init__(self):
-        self.data = pd.read_pickle("./test_data.pkl")
+        self.data = pd.read_pickle("test_data.pkl")
 
     def __get_sorted_values(self, df, selector, scores):
         values = eval(f"selector.{scores}")
