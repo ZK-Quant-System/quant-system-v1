@@ -21,8 +21,8 @@ class ConBondDataProvider:
         self.time_span = conbond_config.time_span
         self.start_date = time.strftime('%Y-%m-%d', time.localtime(time.time() - self.time_span))
         self.end_date = time.strftime('%Y-%m-%d', time.localtime(time.time()))
-        self.jq_account = conbond_provider_config['jq_account']
-        self.jq_password = conbond_provider_config['jq_password']
+        self.jq_account = data_provider_config['jq_account']
+        self.jq_password = data_provider_config['jq_password']
         self.conbond_market_data_file = conbond_config.conbond_market_data_file
         self.trading_dates_file = conbond_config.trading_dates_file
         self.legal_type_list = conbond_config.legal_type_list
@@ -92,7 +92,7 @@ class ConBondDataProvider:
 
 
 @click.command()
-@click.option("--config_file", help="the config file for DataProvider", default=work_path+"/config/config.json")
+@click.option("--config_file", help="the config file for ConBondDataProvider", default=work_path+"/config/config.json")
 def main(config_file):
     with open(config_file) as f:
         data_provider_config = json.load(f)

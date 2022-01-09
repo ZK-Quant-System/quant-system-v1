@@ -6,4 +6,3 @@ data_path='/ZK-quant-system/data/'
 conbond_market_data_file = data_path + "conbond_market_data_with_double_index.pkl"
 dates_path='/ZK-quant-system/gitrepos/quant-system-v1/data_deploy/'
 trading_dates_file = dates_path+'TradingDates.csv'
-
