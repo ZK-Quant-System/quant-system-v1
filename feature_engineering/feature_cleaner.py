@@ -107,13 +107,13 @@ def missing_value_handing(factor_series: pd.Series, method='ffill', rolling_span
 
 
 '''Processing Function'''
-def outlier_replace(df_feature: pd.DataFrame):
+def outlier_replace(df_feature: pd.DataFrame, max_value: float=100000, min_value: float=0):
     """
     异常值替换函数：将无穷值、非法字符及不合理值进行处理，替代为np.nan，将字符型的数字转换为浮点型的数字数，嵌套函数outlier_handling
     :param df_feature:包括所有特征因子的dataframe
     :return: df_feature：经过异常值处理过后的特征因子的dataframe
     """
-    df = df_feature.applymap(outlier_handling)
+    df = df_feature.applymap(lambda x: outlier_handling(x, max_value, min_value))
     glog.info('Outlier replacement complete.')
     return df
 
@@ -139,7 +139,7 @@ def timestamp_matching(df_feature: pd.DataFrame):
     glog.info('Timestamp matching complete.')
     return df_feature
 
-def data_replace(df_feature: pd.DataFrame, null_scale: float=0.8):
+def data_replace(df_feature: pd.DataFrame, method = 'ffill', null_scale: float=0.8):
     """
     数据填充函数：将feature表格的缺失值进行填充
     :param df_feature: :包括所有特征因子的dataframe
@@ -154,8 +154,6 @@ def data_replace(df_feature: pd.DataFrame, null_scale: float=0.8):
     glog.info('Eliminate columns with missing values exceeding the threshold.')
     df_feature.drop(df.columns[df.loc['nan_percent'] >= null_scale], axis=1, inplace=True)
     glog.info('Fill missing value.')
-    df_feature.apply(missing_value_handing)
+    df_feature.apply(missing_value_handing, method=method)
     glog.info('Data replacement complete.')
     return df_feature
-
-
