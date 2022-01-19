@@ -14,6 +14,7 @@ import pandas as pd
 import glog
 import os
 import pickle
+from feature_engineering import feature_cleaner
 
 
 class DataProvider:
@@ -32,17 +33,6 @@ class DataProvider:
         self.fields = data_config.fields
         self.fq = data_config.fq
         auth(self.jq_account, self.jq_password)
-
-    # TODO 可以把这个部分直接兼容到数据清洗模块
-    # 处理非法字符，即非浮点整型数的字符串类及inf。
-    def _replace2nan(self, x):
-        if type(x) in self.legal_type_list:
-            if x in [np.inf, -np.inf]:
-                return np.nan
-            else:
-                return x
-        else:
-            return np.nan
 
     # 得到数据
     def get_data(self):
@@ -73,7 +63,7 @@ class DataProvider:
             new_day_data = new_day_data.rename(columns={'time': 'date'})  # jqdatasdk得到日期的列名为time，为保持一致性，改为date
             new_day_data = new_day_data.set_index(['date', 'code'])  # 设置双索引
             # 清洗数据
-            new_day_data = new_day_data.applymap(self._replace2nan)
+            new_day_data = feature_cleaner.outlier_replace(new_day_data)
             # 将新数据数据跟新到原有的整个数据中
             dfs_double_index = pd.concat([dfs_double_index, new_day_data])
         else:
@@ -86,7 +76,7 @@ class DataProvider:
                 for i in range(len(self.target_stocks_list))}
             # 清洗数据
             for (stock_index_name, df) in dfs.items():
-                dfs[stock_index_name] = df.applymap(self._replace2nan)
+                dfs[stock_index_name] = feature_cleaner.outlier_replace(df)
             col = list(dfs[self.target_stocks_list[0]].columns.values)
             # 设置双索引
             coll = col

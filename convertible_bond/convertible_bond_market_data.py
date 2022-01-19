@@ -14,6 +14,7 @@ import pandas as pd
 import glog
 import os
 import pickle
+from feature_engineering import feature_cleaner
 
 
 class ConBondDataProvider:
@@ -30,17 +31,6 @@ class ConBondDataProvider:
         self.fields = conbond_config.fields
         self.list_status = conbond_config.list_status
         auth(self.jq_account, self.jq_password)
-
-    # TODO 可以把这个部分直接兼容到数据清洗模块
-    # 处理非法字符，即非浮点整型数的字符串类及inf。
-    def _replace2nan(self, x):
-        if type(x) in self.legal_type_list:
-            if x in [np.inf, -np.inf]:
-                return np.nan
-            else:
-                return x
-        else:
-            return np.nan
 
     # 得到数据
     def get_data(self):
@@ -64,7 +54,7 @@ class ConBondDataProvider:
             new_day_data = bond.run_query(query(bond.CONBOND_DAILY_PRICE).filter(bond.CONBOND_DAILY_PRICE.date==new_day))[self.fields]
             new_day_data = new_day_data.set_index(['date', 'code'])  # 设置双索引
             # 清洗数据
-            new_day_data = new_day_data.applymap(self._replace2nan)
+            new_day_data = feature_cleaner.outlier_replace(new_day_data)
             # 将新数据数据跟新到原有的整个数据中
             dfs_double_index = pd.concat([dfs_double_index, new_day_data])
         else:
@@ -81,7 +71,7 @@ class ConBondDataProvider:
             dfs_double_index = dfs_double_index.sort_values(by=['date', 'code'], ascending=[True, True])
             dfs_double_index = dfs_double_index.set_index(['date', 'code'])
             # 清洗数据
-            dfs_double_index = dfs_double_index.applymap(self._replace2nan)
+            dfs_double_index = feature_cleaner.outlier_replace(dfs_double_index)
         glog.info('Data obtained.')
         # 存为pkl格式
         dfs_double_index.to_pickle(self.conbond_market_data_file)
