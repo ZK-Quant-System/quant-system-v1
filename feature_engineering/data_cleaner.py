@@ -8,6 +8,15 @@ from sklearn.impute import KNNImputer
 import pickle
 
 '''Nested Function'''
+def codes_group(df_feature: pd.DataFrame):
+    date = list(df_feature.index.names)[0]
+    code = list(df_feature.index.names)[1]
+    df_feature = df_feature.reset_index()
+    codes = df_feature[code].drop_duplicates()
+    df_feature = df_feature.sort_values(by=[code, date], ascending=[True, True])
+    df_feature = df_feature.set_index([code, date])
+    return df_feature, codes
+
 def outlier_handling(x, max_value: float=100000, min_value: float=0):
     """
     异常值处理函数：将无穷值、非法字符及不合理值进行处理，替代为np.nan，将字符型的数字转换为浮点型的数字数
@@ -38,8 +47,6 @@ def timestamp_matching_handing(df: pd.DataFrame, trading_dates_file=feature_conf
     :param trading_dates_file: 交易时间标准文件
     :return: df：经过时间戳匹配后的特征因子的dataframe
     """
-    # 得到列索引
-    col = list(df.columns.values)
     # 得到日期列
     feature_date = list(df.index.values)
     # 得到原有数据的开始和最后一天的日期
@@ -48,21 +55,42 @@ def timestamp_matching_handing(df: pd.DataFrame, trading_dates_file=feature_conf
     # 读取交易日历
     trading_dates = pd.read_csv(trading_dates_file)
     # 定位对应日期，得到标准的区间日期
-    glog.info('Locate the corresponding date to get the standard interval date.')
+    #glog.info('Locate the corresponding date to get the standard interval date.')
     beginday_location = trading_dates[(trading_dates.trading_date == feature_date_begin)].index.tolist()[0]
     endday_location = trading_dates[(trading_dates.trading_date == feature_date_end)].index.tolist()[0]
     standard_span = trading_dates.loc[beginday_location:endday_location, 'trading_date']
     if len(feature_date) == len(standard_span):
-        glog.info('The timestamp matches.')
+        #glog.info('The timestamp matches.')
         return df
     else:
-        glog.info('The timestamp dose not match.')
+        #glog.info('The timestamp dose not match.')
         difference_list = list(set(standard_span).difference(set(feature_date)))
         for d in difference_list:
             df.loc[d] = np.nan
         df = df.sort_index(axis=0)
-        glog.info('Timestamp matching complete.')
+        #glog.info('Timestamp matching complete.')
         return df
+
+def constant_judgment(factor_series: pd.Series):
+    series = factor_series.drop_duplicates()
+    if len(series) == 1:
+        return True
+    else:
+        return False
+
+def constant_handing(df: pd.DataFrame):
+    col = list(df.columns.values)
+    df_temp = pd.DataFrame(columns=col, index=['constant'])
+    df_temp.loc['constant'] = df.apply(constant_handing)
+    df.drop(df.columns[df_temp.loc['constant']], axis=1, inplace=True)
+    return df
+
+def null_judgment(df: pd.DataFrame, null_scale: float=0.8):
+    col = list(df.columns.values)
+    df_temp = pd.DataFrame(columns=col, index=['nan_percent'])
+    df_temp.loc['nan_percent'] = df.isnull().sum() / len(df.index)
+    df.drop(df.columns[df_temp.loc['nan_percent'] >= null_scale], axis=1, inplace=True)
+    return df
 
 def missing_value_handing(factor_series: pd.Series, method='ffill', rolling_span: int=3, KNN_k: int=3):
     """
@@ -78,12 +106,12 @@ def missing_value_handing(factor_series: pd.Series, method='ffill', rolling_span
         raise Exception("The filling methods are limited to: "+str(valid_method))
 
     if method == 'ffill':
-        glog.info('ffill前填充')
+        #glog.info('ffill前填充')
         if factor_series[0] == np.nan:
             factor_series[0] = 0
         factor_series = factor_series.fillna(method='ffill')
     elif method == 'rolling_mean':
-        glog.info('rolling_mean滚动均值')
+        #glog.info('rolling_mean滚动均值')
         if factor_series[0] == np.nan:
             factor_series[0] = 0
         if factor_series[1] == np.nan:
@@ -95,7 +123,7 @@ def missing_value_handing(factor_series: pd.Series, method='ffill', rolling_span
                 else:
                     factor_series[i] = np.mean(factor_series[i - rolling_span:i])
     elif method == 'KNN':
-        glog.info('KNN填充')
+        #glog.info('KNN填充')
         factor_index = factor_series.index.tolist()
         factor_array = np.array(factor_series)
         factor_array = factor_array.reshape(-1, 1)
@@ -118,24 +146,21 @@ def outlier_replace(df_feature: pd.DataFrame, max_value: float=100000, min_value
     return df
 
 def timestamp_matching(df_feature: pd.DataFrame):
-    datetime = list(df_feature.index.names)[0]
-    instrument = list(df_feature.index.names)[1]
-    df_feature = df_feature.reset_index()
-    instruments = df_feature[instrument].drop_duplicates()
-    df_feature = df_feature.sort_values(by=[instrument, datetime], ascending=[True, True])
-    df_feature = df_feature.set_index([instrument, datetime])
-    col = list(df_feature.columns.values) + [instrument]
+    date = list(df_feature.index.names)[0]
+    code = list(df_feature.index.names)[1]
+    df_feature, codes = codes_group(df_feature)
+    col = list(df_feature.columns.values) + [code]
     df_feature_clean = pd.DataFrame(columns=col)
-    for code in instruments:
+    for ccode in codes:
         #glog.info(code + ' start timestmap matches.')
-        df = df_feature.xs(([code]))
+        df = df_feature.loc[(ccode)]
         df = timestamp_matching_handing(df)
-        df[instrument] = code
+        df[code] = ccode
         df_feature_clean = pd.concat([df_feature_clean, df])
     df_feature_clean.reset_index(inplace=True)
-    df_feature_clean = df_feature_clean.rename(columns={'index': datetime})
-    df_feature_clean = df_feature_clean.sort_values(by=[datetime, instrument], ascending=[True, True])
-    df_feature = df_feature_clean.set_index([datetime, instrument])
+    df_feature_clean = df_feature_clean.rename(columns={'index': date})
+    df_feature_clean = df_feature_clean.sort_values(by=[date, code], ascending=[True, True])
+    df_feature = df_feature_clean.set_index([date, code])
     glog.info('Timestamp matching complete.')
     return df_feature
 
@@ -147,13 +172,25 @@ def data_replace(df_feature: pd.DataFrame, method = 'ffill', null_scale: float=0
     :param null_scale: 缺失值最大比例,缺失值比例多于null_scale的因子需被删除：浮点型
     :return: df_feature：经过缺失值填充过后的特征因子的dataframe
     """
-    # 输入特征序列，缺失值比例阈值，填充方法
-    col = list(df_feature.columns.values)
-    df = pd.DataFrame(columns=col, index=['nan_percent'])
-    df.loc['nan_percent'] = df_feature.isnull().sum() / len(df_feature.index)
-    glog.info('Eliminate columns with missing values exceeding the threshold.')
-    df_feature.drop(df.columns[df.loc['nan_percent'] >= null_scale], axis=1, inplace=True)
-    glog.info('Fill missing value.')
-    df_feature.apply(missing_value_handing, method=method)
+    date = list(df_feature.index.names)[0]
+    code = list(df_feature.index.names)[1]
+    df_feature, codes = codes_group(df_feature)
+    col = list(df_feature.columns.values) + [code]
+    df_feature_clean = pd.DataFrame(columns=col)
+    for ccode in codes:
+        #glog.info(code + ' start judgment.')
+        df = df_feature.loc[(ccode)]
+        glog.info('Eliminate columns with missing values exceeding the threshold and constant.')
+        df = null_judgment(df, null_scale=null_scale)
+        df = constant_handing(df)
+        glog.info('Fill the missing value.')
+        df = df.apply(missing_value_handing, method=method)
+        df[code] = ccode
+        df_feature_clean = pd.concat([df_feature_clean, df])
+    df_feature_clean.reset_index(inplace=True)
+    df_feature_clean = df_feature_clean.rename(columns={'index': date})
+    df_feature_clean = df_feature_clean.sort_values(by=[date, code], ascending=[True, True])
+    df_feature = df_feature_clean.set_index([date, code])
     glog.info('Data replacement complete.')
     return df_feature
+
