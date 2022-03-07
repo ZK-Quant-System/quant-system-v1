@@ -88,9 +88,6 @@ def corr_selector(df_feature: pd.DataFrame, threshold: float = None):
 
     glog.info(f"Feature Selecting corr_selector threshold {threshold}")
 
-    if threshold is None:
-        raise Exception(f"至少输入threshold & k_highest & percentile参数中的一个")
-
     df_feature = df_feature.astype('float')
     df_corr = df_feature.corr()
     df_corr_stack = df_corr.stack()
@@ -128,7 +125,7 @@ def pearsonr_corr_selector(df_feature: pd.DataFrame, df_label: pd.Series,
 
     pearsonr_label = partial(pearsonr, y=df_label)
 
-    def udf_pcorr(df, *args):
+    def udf_pcorr(df):
         df = pd.DataFrame(df)
         df = df.apply(pearsonr_label).iloc[0]
         return df.abs()
