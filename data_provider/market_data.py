@@ -6,7 +6,7 @@ import click
 import sys
 import os.path
 
-work_path=os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+work_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(work_path)
 from config import data_config
 import json
@@ -14,6 +14,7 @@ import pandas as pd
 import glog
 import os
 import pickle
+from feature_engineering import data_cleaner
 
 
 class DataProvider:
@@ -29,18 +30,9 @@ class DataProvider:
         self.stock_index_list = data_config.stock_index_list
         self.frequency = data_config.frequency
         self.target_stocks_list = []
+        self.fields = data_config.fields
+        self.fq = data_config.fq
         auth(self.jq_account, self.jq_password)
-
-    # TODO 可以把这个部分直接兼容到数据清洗模块
-    # 处理非法字符，即非浮点整型数的字符串类及inf。
-    def _replace2nan(self, x):
-        if type(x) in self.legal_type_list:
-            if x in [np.inf, -np.inf]:
-                return np.nan
-            else:
-                return x
-        else:
-            return np.nan
 
     # 得到数据
     def get_data(self):
@@ -67,11 +59,12 @@ class DataProvider:
             yesterday_location = trading_dates[(trading_dates.trading_date == yesterday)].index.tolist()[0]
             new_day = trading_dates.loc[yesterday_location + 1, 'trading_date']
             new_day_data = get_price(security=self.target_stocks_list, start_date=new_day, end_date=new_day,
-                                     frequency=self.frequency)
+                                     frequency=self.frequency, fields=self.fields)
             new_day_data = new_day_data.rename(columns={'time': 'date'})  # jqdatasdk得到日期的列名为time，为保持一致性，改为date
             new_day_data = new_day_data.set_index(['date', 'code'])  # 设置双索引
             # 清洗数据
-            new_day_data = new_day_data.applymap(self._replace2nan)
+            new_day_data = data_cleaner.outlier_replace(new_day_data)
+            glog.info('Outlier replacement complete.')
             # 将新数据数据跟新到原有的整个数据中
             dfs_double_index = pd.concat([dfs_double_index, new_day_data])
         else:
@@ -79,11 +72,13 @@ class DataProvider:
             glog.info('Get all market data.')
             dfs = {
                 self.target_stocks_list[i]: get_price(security=self.target_stocks_list[i], start_date=self.start_date,
-                                                      end_date=self.end_date, frequency=self.frequency)
+                                                      end_date=self.end_date, fq=self.fq, frequency=self.frequency,
+                                                      fields=self.fields, panel=False)
                 for i in range(len(self.target_stocks_list))}
             # 清洗数据
             for (stock_index_name, df) in dfs.items():
-                dfs[stock_index_name] = df.applymap(self._replace2nan)
+                dfs[stock_index_name] = data_cleaner.outlier_replace(df)
+            glog.info('Outlier replacement complete.')
             col = list(dfs[self.target_stocks_list[0]].columns.values)
             # 设置双索引
             coll = col
@@ -98,6 +93,7 @@ class DataProvider:
             dfs_double_index = dfs_double_index.sort_values(by=['date', 'code'], ascending=[True, True])
             dfs_double_index = dfs_double_index.set_index(['date', 'code'])
 
+        dfs_double_index = dfs_double_index.rename(columns={'avg': 'vwap'})
         glog.info('Data obtained.')
         # 存为pkl格式
         dfs_double_index.to_pickle(self.market_data_file)

@@ -6,7 +6,6 @@ datetime = 'datetime'
 method = 'rolling_mean'
 rolling_span = 3 # 大等于2
 KNN_k = 3
-max_value = 100000
 min_value = 0
 null_scale = 0.8
 trading_dates_file = '../data_deploy/TradingDates.csv'
