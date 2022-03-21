@@ -117,18 +117,18 @@ def missing_value_handing(factor_series: pd.Series, method='ffill', rolling_span
         if factor_series[0] == np.nan:
             factor_series[0] = 0
         factor_series = factor_series.fillna(method='ffill')
-    elif method == 'rolling_mean':#TODO
+    elif method == 'rolling_mean':
         #glog.info('rolling_mean滚动均值')
-        if factor_series[0] == np.nan:
-            factor_series[0] = 0
-        if factor_series[1] == np.nan:
-            factor_series[1] = factor_series[0]
-        for i in range(2, len(factor_series)):
-            if factor_series[i] == np.nan:
-                if i < rolling_span:
-                    factor_series[i] = np.mean(factor_series[0:i])
-                else:
-                    factor_series[i] = np.mean(factor_series[i - rolling_span:i])
+        if rolling_span < 2:
+            raise Exception(f"滚动均值的跨度必须大等于2")
+        else:
+            for i in range(2, len(factor_series)):
+                if factor_series[i] == np.nan:
+                    if i < rolling_span:
+                        factor_series[i] = np.mean(factor_series[0:i])
+                    else:
+                        factor_series[i] = np.mean(factor_series[i - rolling_span:i])
+
     elif method == 'KNN':
         #glog.info('KNN填充')
         factor_index = factor_series.index.tolist()
@@ -148,8 +148,8 @@ def outlier_replace(df_feature: pd.DataFrame, max_value: float=100000, min_value
     :param df_feature:包括所有特征因子的dataframe
     :return: df_feature：经过异常值处理过后的特征因子的dataframe
     """
-    df = df_feature.applymap(lambda x: outlier_handling(x, max_value, min_value))
-    glog.info('Outlier replacement complete.')
+    df = df_feature.applymap(lambda x: outlier_handling(x, min_value))
+    #glog.info('Outlier replacement complete.')
     return df
 
 def timestamp_matching(df_feature: pd.DataFrame):
@@ -168,7 +168,7 @@ def timestamp_matching(df_feature: pd.DataFrame):
         df_feature_matched = pd.concat([df_feature_matched, df])
     df_feature_matched = df_feature_matched.sort_values(by=['date', 'code'], ascending=[True, True])
     df_feature_matched = df_feature_matched.set_index(['date', 'code'])
-    glog.info('Timestamp matching complete.')
+    #glog.info('Timestamp matching complete.')
     return df_feature_matched
 
 def data_replace(df_feature: pd.DataFrame, method = 'ffill', null_scale: float=0.8):
@@ -191,7 +191,7 @@ def data_replace(df_feature: pd.DataFrame, method = 'ffill', null_scale: float=0
         df_feature_replaced = pd.concat([df_feature_replaced, df])
     df_feature_replaced = df_feature_replaced.sort_values(by=['date', 'code'], ascending=[True, True])
     df_feature_replaced = df_feature_replaced.set_index(['date', 'code'])
-    glog.info('Data replacement complete.')
+    #glog.info('Data replacement complete.')
     return df_feature_replaced
 
 
