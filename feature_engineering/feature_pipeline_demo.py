@@ -28,7 +28,8 @@ class DemoFeaturePipeline:
         return clean_func(data)
 
     def generate_feature(self):
-        self.df_feature_generated = symbolictransformer(features=self.df_feature.copy(deep=True), target=self.df_label.copy(deep=True), prop=0.8)
+        self.df_feature_generated = symbolictransformer(features=self.df_feature.copy(deep=True),
+                                                        target=self.df_label.copy(deep=True), prop=0.8)
 
     def select_feature(self):
         self.df_feature = corr_selector(self.df_feature, threshold=0.9)
@@ -41,6 +42,7 @@ class DemoFeaturePipeline:
         self.select_feature()
         self.data_concat = self.concatenate_data()
         return self.clean_data(self.data_concat)
+
 
 if __name__ == "__main__":
     df_test = pd.read_pickle('./test_dataset.pkl')
