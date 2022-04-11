@@ -12,7 +12,7 @@ import seaborn as sns
 
 work_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(work_path)
-from config import analyze_config
+from config import data_config
 
 
 def customize(func):
@@ -78,7 +78,7 @@ def print_data_table(data_table, name=None, fmt=None):
     ax.xaxis.set_visible(False)
     ax.yaxis.set_visible(False)
     table(ax, data_table, loc='center')
-    plt.savefig(analyze_config.fig_path + name + '.jpg')
+    plt.savefig(data_config.fig_path + name + '.jpg')
 
     if fmt is not None:
         pd.set_option('display.float_format', prev_option)

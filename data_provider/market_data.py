@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from jqdatasdk import auth, get_index_stocks, get_price, get_industry, get_trade_days
+from jqdatasdk import auth, get_index_stocks, get_price, get_trade_days
+from jqfactor_analyzer import data
 import time
 import click
 import sys
@@ -8,8 +9,6 @@ import os.path
 work_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(work_path)
 from config import data_config
-# TODO
-from factor_analyzer import data
 import json
 import pandas as pd
 import glog
@@ -43,6 +42,7 @@ class DataProvider:
     # 得到market数据
     def get_market_data(self):
         glog.info('In get_market_data:')
+        self.target_stocks_list = []
         for stock_index_name in self.stock_index_list:
             stock_index_data = get_index_stocks(stock_index_name)
             self.target_stocks_list += stock_index_data
@@ -106,6 +106,7 @@ class DataProvider:
     # 得到industry数据
     def get_groupby_data(self):
         glog.info('In get_groupby_data:')
+        self.target_stocks_list = []
         for stock_index_name in self.stock_index_list:
             stock_index_data = get_index_stocks(stock_index_name)
             self.target_stocks_list += stock_index_data
@@ -120,7 +121,8 @@ class DataProvider:
             # 得到日期列
             old_date = dfs_double_index.reset_index()['date']
             # 删除删除最开始一天数据
-            dfs_double_index = dfs_double_index.drop(str(old_date.values[0])[0:10])
+            # dfs_double_index = dfs_double_index.drop(str(old_date.values[0])[0:10])
+            dfs_double_index = dfs_double_index.drop(old_date[0])
             # 得到原有数据的最后一天的日期
             yesterday = str(old_date.values[-1])[0:10]
             # 读取交易日历
@@ -128,9 +130,17 @@ class DataProvider:
             # 定位对应日期，得到最新日期及其对应的股票数据
             yesterday_location = trading_dates[(trading_dates.trading_date == yesterday)].index.tolist()[0]
             new_day = trading_dates.loc[yesterday_location + 1, 'trading_date']
-            new_day_data = get_industry(security=self.target_stocks_list, date=new_day)
-            new_day_data = new_day_data.rename(columns={'time': 'date'})  # jqdatasdk得到日期的列名为time，为保持一致性，改为date
-            new_day_data = new_day_data.set_index(['date', 'code'])  # 设置双索引
+            api = data.DataApi()
+            new_day_data = api.get_groupby(self.target_stocks_list, new_day, new_day)
+            coll = list()
+            coll.append('date')
+            coll.append('code')
+            df = pd.DataFrame(columns=coll)
+            for stock in self.target_stocks_list:
+                df_temp = {'date': list(new_day_data[stock].index.values), 'code': stock, 'groupby': new_day_data[stock]}
+                df_temp = pd.DataFrame(df_temp)
+                df = pd.concat([df, df_temp])
+            new_day_data = df.set_index(['date', 'code'])  # 设置双索引
             '''
             # 清洗数据
             new_day_data = feature_cleaner.outlier_replace(new_day_data)
@@ -161,6 +171,7 @@ class DataProvider:
     # 得到market_cap数据
     def get_market_cap_data(self):
         glog.info('In get_market_cap_data:')
+        self.target_stocks_list = []
         for stock_index_name in self.stock_index_list:
             stock_index_data = get_index_stocks(stock_index_name)
             self.target_stocks_list += stock_index_data
@@ -176,7 +187,8 @@ class DataProvider:
             # 得到日期列
             old_date = dfs_double_index.reset_index()['date']
             # 删除删除最开始一天数据
-            dfs_double_index = dfs_double_index.drop(str(old_date.values[0])[0:10])
+            # dfs_double_index = dfs_double_index.drop(str(old_date.values[0])[0:10])
+            dfs_double_index = dfs_double_index.drop(old_date[0])
             # 得到原有数据的最后一天的日期
             yesterday = str(old_date.values[-1])[0:10]
             # 读取交易日历
@@ -187,8 +199,16 @@ class DataProvider:
             new_day_data = api._get_market_cap(securities=self.target_stocks_list,
                                                start_date=new_day,
                                                end_date=new_day)
-            new_day_data = new_day_data.rename(columns={'time': 'date'})  # jqdatasdk得到日期的列名为time，为保持一致性，改为date
-            new_day_data = new_day_data.set_index(['date', 'code'])  # 设置双索引
+            coll = list()
+            coll.append('date')
+            coll.append('code')
+            df_double_index = pd.DataFrame(columns=coll)
+            for stock in self.target_stocks_list:
+                df_temp = {'date': new_day_data.index, 'code': stock, 'market_cap': new_day_data[stock]}
+                df_temp = pd.DataFrame(df_temp)
+                df_double_index = pd.concat([df_double_index, df_temp])
+            df_double_index.sort_values(by=['date', 'code'], ascending=[True, True], inplace=True)
+            new_day_data = df_double_index.set_index(['date', 'code'])  # 设置双索引
             '''
             # 清洗数据
             new_day_data = feature_cleaner.outlier_replace(new_day_data)
@@ -221,6 +241,7 @@ class DataProvider:
     # 得到market_cap数据
     def get_circulating_market_cap_data(self):
         glog.info('In get_circulating_market_cap_data:')
+        self.target_stocks_list = []
         for stock_index_name in self.stock_index_list:
             stock_index_data = get_index_stocks(stock_index_name)
             self.target_stocks_list += stock_index_data
@@ -236,7 +257,8 @@ class DataProvider:
             # 得到日期列
             old_date = dfs_double_index.reset_index()['date']
             # 删除删除最开始一天数据
-            dfs_double_index = dfs_double_index.drop(str(old_date.values[0])[0:10])
+            # dfs_double_index = dfs_double_index.drop(str(old_date.values[0])[0:10])
+            dfs_double_index = dfs_double_index.drop(old_date[0])
             # 得到原有数据的最后一天的日期
             yesterday = str(old_date.values[-1])[0:10]
             # 读取交易日历
@@ -247,8 +269,16 @@ class DataProvider:
             new_day_data = api._get_circulating_market_cap(securities=self.target_stocks_list,
                                                            start_date=new_day,
                                                            end_date=new_day)
-            new_day_data = new_day_data.rename(columns={'time': 'date'})  # jqdatasdk得到日期的列名为time，为保持一致性，改为date
-            new_day_data = new_day_data.set_index(['date', 'code'])  # 设置双索引
+            coll = list()
+            coll.append('date')
+            coll.append('code')
+            df_double_index = pd.DataFrame(columns=coll)
+            for stock in self.target_stocks_list:
+                df_temp = {'date': new_day_data.index, 'code': stock, 'circulating_market_cap': new_day_data[stock]}
+                df_temp = pd.DataFrame(df_temp)
+                df_double_index = pd.concat([df_double_index, df_temp])
+            df_double_index.sort_values(by=['date', 'code'], ascending=[True, True], inplace=True)
+            new_day_data = df_double_index.set_index(['date', 'code'])  # 设置双索引
             '''
             # 清洗数据
             new_day_data = feature_cleaner.outlier_replace(new_day_data)
@@ -281,6 +311,7 @@ class DataProvider:
     # 得到weight数据
     def get_weight_data(self):
         glog.info('In get_weight_data:')
+        self.target_stocks_list = []
         for stock_index_name in self.stock_index_list:
             stock_index_data = get_index_stocks(stock_index_name)
             self.target_stocks_list += stock_index_data
@@ -296,7 +327,8 @@ class DataProvider:
             # 得到日期列
             old_date = dfs_double_index.reset_index()['date']
             # 删除删除最开始一天数据
-            dfs_double_index = dfs_double_index.drop(str(old_date.values[0])[0:10])
+            # dfs_double_index = dfs_double_index.drop(str(old_date.values[0])[0:10])
+            dfs_double_index = dfs_double_index.drop(old_date[0])
             # 得到原有数据的最后一天的日期
             yesterday = str(old_date.values[-1])[0:10]
             # 读取交易日历
@@ -307,8 +339,19 @@ class DataProvider:
             new_day_data = api.get_weights(securities=self.target_stocks_list,
                                            start_date=new_day,
                                            end_date=new_day)
-            new_day_data = new_day_data.rename(columns={'time': 'date'})  # jqdatasdk得到日期的列名为time，为保持一致性，改为date
-            new_day_data = new_day_data.set_index(['date', 'code'])  # 设置双索引
+            coll = list()
+            coll.append('date')
+            coll.append('code')
+            df_double_index = pd.DataFrame(columns=coll)
+            for stock in self.target_stocks_list:
+                if self.weight_method is not 'avg':
+                    df_temp = {'date': new_day_data.index, 'code': stock, 'weight': new_day_data[stock]}
+                else:
+                    df_temp = {'date': new_day, 'code': stock, 'weights': new_day_data[stock]}
+                df_temp = pd.DataFrame(list(df_temp.items()))
+                df_double_index = pd.concat([df_double_index, df_temp])
+            df_double_index.sort_values(by=['date', 'code'], ascending=[True, True], inplace=True)
+            new_day_data = df_double_index.set_index(['date', 'code'])  # 设置双索引
             '''
             # 清洗数据
             new_day_data = feature_cleaner.outlier_replace(new_day_data)
@@ -327,7 +370,11 @@ class DataProvider:
             coll.append('code')
             dfs_double_index = pd.DataFrame(columns=coll)
             for stock in self.target_stocks_list:
-                df_temp = {'date': list(dfs[stock].index.values), 'code': stock, 'weight': dfs[stock]}
+                if self.weight_method is not 'avg':
+                    df_temp = {'date': list(dfs[stock].index.values), 'code': stock, 'weight': dfs[stock]}
+                else:
+                    trading_dates = get_trade_days(self.start_date, self.end_date)
+                    df_temp = {'date': list(trading_dates), 'code': stock, 'weights': dfs[stock]}
                 df_temp = pd.DataFrame(df_temp)
                 dfs_double_index = pd.concat([dfs_double_index, df_temp])
             dfs_double_index = dfs_double_index.sort_values(by=['date', 'code'], ascending=[True, True])

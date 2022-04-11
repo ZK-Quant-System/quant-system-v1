@@ -5,10 +5,17 @@ from functools import partial
 
 import numpy as np
 import pandas as pd
+import pickle
 from fastcache import lru_cache
+import os.path
+import sys
 
 from .when import date2str
 
+
+work_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+sys.path.append(work_path)
+from config import data_config
 # TODO
 # rewrite dataapi
 class DataApi(object):
@@ -101,6 +108,13 @@ class DataApi(object):
                       'weights': get_weights}
 
         """
+
+        self.trading_dates_file = data_config.trading_dates_file
+        self.trading_days = pd.read_csv(self.trading_dates_file)
+        self.market_data_file = data_config.market_data_file
+        self.market_data = pickle.load(open(self.market_data_file, 'rb+'))
+
+        """
         try:
             import jqdata
             self._api = jqdata.apis
@@ -109,6 +123,7 @@ class DataApi(object):
             import jqdatasdk
             self._api = jqdatasdk
             self._api_name = 'jqdatasdk'
+        """
 
         valid_price = ('close', 'open')
         if price in valid_price:
@@ -138,7 +153,7 @@ class DataApi(object):
         else:
             raise ValueError("invalid 'weight_method' parameter, "
                              "should be one of %s" % str(valid_weight_method))
-
+    """
     def auth(self, username='', password=''):
         if self._api_name == 'jqdata':
             return
@@ -146,12 +161,14 @@ class DataApi(object):
         if username:
             import jqdatasdk
             jqdatasdk.auth(username, password)
-
+    """
+    """
     @property
     def api(self):
         if not hasattr(self, "_api"):
             raise NotImplementedError('api not specified')
         return self._api
+    """
 
     @lru_cache(2)
     def _get_trade_days(self, start_date=None, end_date=None):
@@ -159,13 +176,17 @@ class DataApi(object):
             start_date = date2str(start_date)
         if end_date is not None:
             end_date = date2str(end_date)
+        """
         return list(self.api.get_trade_days(start_date=start_date,
                                             end_date=end_date))
+        """
+        return self.trade_days.iloc[start_date, end_date+1]
 
     def _get_price(self, securities, start_date=None, end_date=None, count=None,
                    fields=None, skip_paused=False, fq='post'):
         start_date = date2str(start_date) if start_date is not None else None
         end_date = date2str(end_date) if end_date is not None else None
+        """
         if self._api_name == 'jqdata':
             if 'panel' in self.api.get_price.__code__.co_varnames:
                 get_price = partial(self.api.get_price,
@@ -185,6 +206,8 @@ class DataApi(object):
             p.index.names = ['time', 'code']
             p.reset_index(inplace=True)
         return p
+        """
+        return self.market_data.iloc[start_date, end_date+1]
 
     def get_prices(self, securities, start_date=None, end_date=None,
                    period=None):
@@ -192,6 +215,7 @@ class DataApi(object):
             trade_days = self._get_trade_days(start_date=end_date)
             if len(trade_days):
                 end_date = trade_days[:period + 1][-1]
+        """
         p = self._get_price(
             fields=[self.price], securities=securities,
             start_date=start_date, end_date=end_date,
@@ -199,6 +223,12 @@ class DataApi(object):
         )
         p = p.set_index(['time', 'code'])[self.price].unstack('code').sort_index()
         return p
+        """
+        return self._get_price(
+            fields=[self.price], securities=securities,
+            start_date=start_date, end_date=end_date,
+            fq=self.fq
+        )[self.price]
 
     def _get_industry(self, securities, start_date, end_date,
                       industry='jq_l1'):
