@@ -25,8 +25,8 @@ class DataProvider:
         self.end_date = time.strftime('%Y-%m-%d', time.localtime(time.time()))
         self.jq_account = data_provider_config['jq_account']
         self.jq_password = data_provider_config['jq_password']
-        self.market_data_file = data_config.market_data_file
-        self.groupby_data_file = data_config.groupby_data_file
+        self.market_data_file = data_config.market_data_path
+        self.groupby_data_file = data_config.groupby_data_path
         self.market_cap_data_file = data_config.market_cap_data_file
         self.circulating_market_cap_data_file = data_config.circulating_market_cap_data_file
         self.weight_data_file = data_config.weight_data_file
@@ -395,11 +395,12 @@ class DataProvider:
 
 
 @click.command()
-@click.option("--config_file", help="the config file for DataProvider", default=work_path + "/config/config.json")
+@click.option("--config_file", help="the config file for DataProvider",
+              default="./jq_account_config.json")
 def main(config_file):
     with open(config_file) as f:
         data_provider_config = json.load(f)
-    glog.info('loaded config.json.')
+    glog.info('loaded jq_account_config.json.')
     data_provider = DataProvider(data_provider_config)
     glog.info('start get_data.')
     data_provider.get_market_data()

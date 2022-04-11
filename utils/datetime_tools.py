@@ -2,7 +2,7 @@ import datetime
 import sys
 
 sys.path.append("../")
-from config import global_config
+from config import base_config
 
 
 def get_current_date(date_format="%Y-%m-%d"):

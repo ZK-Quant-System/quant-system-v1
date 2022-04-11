@@ -10,7 +10,7 @@ from scipy import stats
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import OneHotEncoder
 from gplearn.genetic import SymbolicTransformer
-from config import feature_config
+from config import feature_pipeline_config
 
 
 def label_ret(df:pd.DataFrame, n):

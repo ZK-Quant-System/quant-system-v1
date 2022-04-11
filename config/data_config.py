@@ -1,31 +1,39 @@
-from typing import List
+import base_config
+import sys
 
-# stock_index_list: List[str] = ['000300.XSHG', '000905.XSHG', '000852.XSHG']
-stock_index_list: List[str] = ['000905.XSHG']
+sys.path.append("../..")
+from utils import path_wrapper
 
-legal_type_list = [float, int]
-time_span = 1 * 365 * 24 * 60 * 60
-frequency = 'daily'
+market_data_path = path_wrapper.wrap_path(f"{base_config.base_data_path}/market_data")
 
-fields = ['open', 'close', 'high', 'low', 'volume', 'money',  'avg', 'factor']
-fq = 'pre' # 'pre': 前复权;'post': 后复权;None: 不复权
-weight_method = 'avg' #weight_method : 计算各分位收益时, 每只股票权重, 默认为 'avg'
-# 'avg': 等权重;'mktcap': 按总市值加权;'ln_mktcap': 按总市值的对数加权;'cmktcap': 按流通市值加权;'ln_cmktcap': 按流通市值的对数加权
+stock_config = {
+    "stock_index_list": ['000905.XSHG'],
+    # stock_index_list: List[str] ['000300.XSHG', '000905.XSHG', '000852.XSHG']
+    "legal_type_list": [float, int],
+    "frequency": 'daily',
+    "time_span": 1 * 365 * 24 * 60 * 60,
+    "fields": ['open', 'close', 'high', 'low', 'volume', 'money', 'avg', 'factor'],
+    # 'pre': 前复权;'post': 后复权;None: 不复权
+    "fq": 'pre',
+    # 'avg': 等权重;'mktcap': 按总市值加权;'ln_mktcap': 按总市值的对数加权;'cmktcap': 按流通市值加权;'ln_cmktcap': 按流通市值的对数加权
+    "weight_method": 'avg',
+    "market_data_file": f"{market_data_path}/market_data_with_double_index.pkl",
+    "groupby_data_file": f"{market_data_path}/groupby_data_with_double_index.pkl",
+    "market_cap_data_file": f"{market_data_path}/market_cap_data_with_double_index.pkl",
+    "circulating_market_cap_data_file":  f"{market_data_path}/circulating_market_cap_data_with_double_index.pkl",
+    "weight_data_file": f"{market_data_path}/weight_data_with_double_index.pkl",
 
-user = 'jws'
+}
 
-if user is 'server':
-    data_path='/ZK-quant-system/data/'
-    dates_path='/ZK-quant-system/gitrepos/quant-system-v1/data_deploy/'
-    fig_path = '/ZK-quant-system/figures/'
-elif user is 'jws':
-    data_path = r'C:\Users\lenovo\Desktop\hnu\ZK-Quant-System\v1\tmprepo\data\\'[:-1]
-    dates_path = r'C:\Users\lenovo\Desktop\hnu\ZK-Quant-System\v1\quant-system-v1\data_deploy\\'[:-1]
-    fig_path = r'C:\Users\lenovo\Desktop\hnu\ZK-Quant-System\v1\tmprepo\figures\\'[:-1]
 
-market_data_file = data_path + "market_data_with_double_index.pkl"
-groupby_data_file = data_path + "groupby_data_with_double_index.pkl"
-market_cap_data_file = data_path + "market_cap_data_with_double_index.pkl"
-circulating_market_cap_data_file = data_path + "circulating_market_cap_data_with_double_index.pkl"
-weight_data_file = data_path + "weight_data_with_double_index.pkl"
-trading_dates_file = dates_path + 'TradingDates.csv'
+cb_config = {
+    "cb_market_data_file"
+    "legal_type_list": [float, int],
+    "list_status": '正常上市',
+    "time_span": 2 * 365 * 24 * 60 * 60,
+    "fields": ['date', 'code', 'open', 'close', 'high', 'low', 'volume', 'money'],
+    "cb_market_data_file": f"{market_data_path}/conbond_market_data_with_double_index.pkl"
+
+
+}
+

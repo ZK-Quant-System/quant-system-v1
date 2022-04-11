@@ -1,5 +1,5 @@
 import numpy as np
-from config import feature_config
+from config import feature_pipeline_config
 import pandas as pd
 from sklearn.impute import KNNImputer
 import sys

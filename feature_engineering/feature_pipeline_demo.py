@@ -50,3 +50,4 @@ if __name__ == "__main__":
     df_test['close'] = df_test['return']
     demo_pipeline = DemoFeaturePipeline(df_test, label='return', feature_list=df_test.columns)
     demo_pipeline.run()
+
