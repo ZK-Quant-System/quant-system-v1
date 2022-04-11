@@ -1,5 +1,5 @@
 import numpy as np
-from config import feature_pipeline_config
+from config import base_config
 import pandas as pd
 from sklearn.impute import KNNImputer
 import sys
@@ -55,7 +55,7 @@ def timestamp_matching_handing(df: pd.DataFrame, code: str, standard_span: list)
         return df
 
 
-def span(df_feature: pd.DataFrame, trading_dates_file=feature_config.trading_dates_file):
+def span(df_feature: pd.DataFrame, trading_dates_file=base_config.trading_date_file):
     # 得到日期列
     temp_mindex = pd.DataFrame(df_feature.index)
     feature_date = list(pd.DataFrame(temp_mindex[0].tolist(), index=temp_mindex.index)[0])

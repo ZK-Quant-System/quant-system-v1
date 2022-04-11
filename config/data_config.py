@@ -27,7 +27,6 @@ stock_config = {
 
 
 cb_config = {
-    "cb_market_data_file"
     "legal_type_list": [float, int],
     "list_status": '正常上市',
     "time_span": 2 * 365 * 24 * 60 * 60,

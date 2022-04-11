@@ -5,7 +5,7 @@ import time
 import click
 import sys
 import os.path
-from config import data_config
+from config import data_config, base_config
 import json
 import pandas as pd
 import glog
@@ -20,24 +20,25 @@ sys.path.append(work_path)
 
 class DataProvider:
     def __init__(self, data_provider_config):
-        self.time_span = data_config.time_span
+        self.config = data_config.stock_config
+        self.time_span = self.config["time_span"]
         self.start_date = time.strftime('%Y-%m-%d', time.localtime(time.time() - self.time_span))
         self.end_date = time.strftime('%Y-%m-%d', time.localtime(time.time()))
         self.jq_account = data_provider_config['jq_account']
         self.jq_password = data_provider_config['jq_password']
-        self.market_data_file = data_config.market_data_path
-        self.groupby_data_file = data_config.groupby_data_path
-        self.market_cap_data_file = data_config.market_cap_data_file
-        self.circulating_market_cap_data_file = data_config.circulating_market_cap_data_file
-        self.weight_data_file = data_config.weight_data_file
-        self.trading_dates_file = data_config.trading_dates_file
-        self.legal_type_list = data_config.legal_type_list
-        self.stock_index_list = data_config.stock_index_list
-        self.frequency = data_config.frequency
+        self.market_data_file = self.config["market_data_path"]
+        self.groupby_data_file = self.config["groupby_data_path"]
+        self.market_cap_data_file = self.config["market_cap_data_file"]
+        self.circulating_market_cap_data_file = self.config["circulating_market_cap_data_file"]
+        self.weight_data_file = self.config["weight_data_file"]
+        self.trading_dates_file = base_config.trading_date_file
+        self.legal_type_list = self.config["legal_type_list"]
+        self.stock_index_list = self.config["stock_index_list"]
+        self.frequency = self.config["frequency"]
         self.target_stocks_list = []
-        self.fields = data_config.fields
-        self.fq = data_config.fq
-        self.weight_method = data_config.weight_method
+        self.fields = self.config["fields"]
+        self.fq = self.config["fq"]
+        self.weight_method = self.config["weight_method"]
         auth(self.jq_account, self.jq_password)
 
     # 得到market数据
