@@ -1,13 +1,9 @@
 # -*- coding: utf-8 -*-
 from jqdatasdk import auth, get_index_stocks, get_price
 import time
-import numpy as np
 import click
 import sys
 import os.path
-
-work_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-sys.path.append(work_path)
 from config import data_config
 import json
 import pandas as pd
@@ -15,6 +11,8 @@ import glog
 import os
 import pickle
 from feature_engineering import data_cleaner
+work_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+sys.path.append(work_path)
 
 
 class DataProvider:
