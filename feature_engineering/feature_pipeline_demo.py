@@ -1,7 +1,7 @@
 from functools import partial, reduce
 import pandas as pd
 from feature_selector import corr_selector
-from feature_cleaner import outlier_replace, timestamp_matching, data_replace
+from data_cleaner import outlier_replace, timestamp_matching, data_replace
 from feature_constructor import symbolictransformer
 from label_constructor import calc_return
 

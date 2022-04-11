@@ -1,24 +1,20 @@
 # -*- coding: utf-8 -*-
 from jqdatasdk import auth, get_index_stocks, get_price
 import time
-import numpy as np
 import click
 import sys
 import os.path
-
-work_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-sys.path.append(work_path)
 from config import data_config
 import json
 import pandas as pd
 import glog
 import os
 import pickle
-<<<<<<< HEAD
-from feature_engineering import feature_cleaner
-=======
+
 from feature_engineering import data_cleaner
->>>>>>> origin/characteristic_cleaning
+
+work_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+sys.path.append(work_path)
 
 
 class DataProvider:
@@ -67,12 +63,9 @@ class DataProvider:
             new_day_data = new_day_data.rename(columns={'time': 'date'})  # jqdatasdk得到日期的列名为time，为保持一致性，改为date
             new_day_data = new_day_data.set_index(['date', 'code'])  # 设置双索引
             # 清洗数据
-<<<<<<< HEAD
-            new_day_data = feature_cleaner.outlier_replace(new_day_data)
-=======
+
             new_day_data = data_cleaner.outlier_replace(new_day_data)
             glog.info('Outlier replacement complete.')
->>>>>>> origin/characteristic_cleaning
             # 将新数据数据跟新到原有的整个数据中
             dfs_double_index = pd.concat([dfs_double_index, new_day_data])
         else:
@@ -85,12 +78,8 @@ class DataProvider:
                 for i in range(len(self.target_stocks_list))}
             # 清洗数据
             for (stock_index_name, df) in dfs.items():
-<<<<<<< HEAD
-                dfs[stock_index_name] = feature_cleaner.outlier_replace(df)
-=======
                 dfs[stock_index_name] = data_cleaner.outlier_replace(df)
             glog.info('Outlier replacement complete.')
->>>>>>> origin/characteristic_cleaning
             col = list(dfs[self.target_stocks_list[0]].columns.values)
             # 设置双索引
             coll = col

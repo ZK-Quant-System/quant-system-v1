@@ -1,5 +1,5 @@
-/.idea/*
-/config/__pycache__/*
-/factor_alpha/__pycache__/*
+/.idea/
+*/__pycache__/
 *.pkl
 *.pyc
+
