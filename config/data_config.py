@@ -1,11 +1,13 @@
 from typing import List
 
-#stock_index_list: List[str] = ['000300.XSHG', '000905.XSHG', '000852.XSHG']
+# stock_index_list: List[str] = ['000300.XSHG', '000905.XSHG', '000852.XSHG']
 stock_index_list: List[str] = ['000905.XSHG']
+
 legal_type_list = [float, int]
 time_span = 1 * 365 * 24 * 60 * 60
 frequency = 'daily'
-fields = ['open', 'close', 'high', 'low', 'volume', 'money', 'factor']
+
+fields = ['open', 'close', 'high', 'low', 'volume', 'money',  'avg', 'factor']
 fq = 'pre' # 'pre': 前复权;'post': 后复权;None: 不复权
 weight_method = 'avg' #weight_method : 计算各分位收益时, 每只股票权重, 默认为 'avg'
 # 'avg': 等权重;'mktcap': 按总市值加权;'ln_mktcap': 按总市值的对数加权;'cmktcap': 按流通市值加权;'ln_cmktcap': 按流通市值的对数加权

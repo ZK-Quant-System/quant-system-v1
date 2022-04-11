@@ -81,24 +81,17 @@ def corr_selector(df_feature: pd.DataFrame, threshold: float = None):
     """
     相关性筛选器：当任意两特征之间相关性超过阈值时，删除靠前的特征。
     :param df_feature: 包括所有特征因子的dataframe
-    :param threshold:  取方差大小为为前k_highest的特征
+    :param threshold:  相关性阈值
 
     :return: df_selected: 经过筛选后的df_feature
     """
 
     glog.info(f"Feature Selecting corr_selector threshold {threshold}")
 
-    if threshold is None:
-        raise Exception(f"至少输入threshold & k_highest & percentile参数中的一个")
-
     df_feature = df_feature.astype('float')
     df_corr = df_feature.corr()
-    df_corr_stack = df_corr.stack()
-    triu_select = np.triu(np.ones(df_corr.shape)).astype('bool').reshape(df_corr.size)
-    remove_self_select = (df_corr_stack != 1)
-    corr_select = np.logical_and(triu_select, remove_self_select)
-    df_corr_stack = df_corr_stack[corr_select]
-
+    triu_select = np.triu(np.ones(df_corr.shape), k=1).astype('bool')
+    df_corr_stack = df_corr.where(triu_select).stack()
     threshold_select = df_corr_stack > threshold
     df_corr_drop = df_corr_stack[threshold_select]
 
@@ -128,7 +121,7 @@ def pearsonr_corr_selector(df_feature: pd.DataFrame, df_label: pd.Series,
 
     pearsonr_label = partial(pearsonr, y=df_label)
 
-    def udf_pcorr(df, *args):
+    def udf_pcorr(df):
         df = pd.DataFrame(df)
         df = df.apply(pearsonr_label).iloc[0]
         return df.abs()
