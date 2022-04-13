@@ -1,4 +1,4 @@
-import base_config
+from . import base_config
 import qlib
 import os
 
@@ -13,7 +13,7 @@ alpha_fusion_factor_config = {
     "start_time": '2020-01-01',
     "end_time": '2020-01-30',
     "fit_start_time": '2020-01-01',
-    "fit_ebd_time": '2020-01-30',
+    "fit_end_time": '2020-01-30',
     "freq": "day",
     "csv_dir": f"{factor_base_path}/csv_data",
     "qlib_dir": f"{factor_base_path}/qlib_data",
