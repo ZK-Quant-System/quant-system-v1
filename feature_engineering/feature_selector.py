@@ -9,7 +9,7 @@ from sklearn.linear_model import Ridge, Lasso, ElasticNet
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import AdaBoostRegressor, RandomForestRegressor
 from lightgbm.sklearn import LGBMRegressor
-
+from typing import Tuple, Dict
 
 def get_sorted_values(df, selector, scores):
     values = eval(f"selector.{scores}")
@@ -46,7 +46,8 @@ def embedded_selector(df_feature, df_label, estimator, k_highest, percentile,
 
 
 def variance_selector(df_feature: pd.DataFrame, df_label: pd.Series,
-                      threshold: float = None, k_highest: int = None, percentile: int = None):
+                      threshold: float = None, k_highest: int = None,
+                      percentile: int = None) -> Tuple[pd.DataFrame, Dict]:
     """
     方差筛选器：当某特征的方差小于阈值时，删除该特征。
     :param df_feature: 包括所有特征因子的dataframe
