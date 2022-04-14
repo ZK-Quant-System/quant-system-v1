@@ -94,6 +94,7 @@ class FactorAlpha:
 
 
 def main():
+    qlib.init()
     factor_alpha = FactorAlpha()
     factor_alpha.run()
 

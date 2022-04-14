@@ -265,7 +265,7 @@ class TechFactors:
 
 
 def main():
-    df_data = pd.read_pickle(data_config.market_data_path)
+    df_data = pd.read_pickle(data_config.stock_config['market_data_file'])
     df_data = df_data.reset_index()
     tf = TechFactors(df_data)
     tf.run()
