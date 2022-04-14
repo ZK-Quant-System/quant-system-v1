@@ -26,8 +26,8 @@ class DataProvider:
         self.end_date = time.strftime('%Y-%m-%d', time.localtime(time.time()))
         self.jq_account = data_provider_config['jq_account']
         self.jq_password = data_provider_config['jq_password']
-        self.market_data_file = self.config["market_data_path"]
-        self.groupby_data_file = self.config["groupby_data_path"]
+        self.market_data_file = self.config["market_data_file"]
+        self.groupby_data_file = self.config["groupby_data_file"]
         self.market_cap_data_file = self.config["market_cap_data_file"]
         self.circulating_market_cap_data_file = self.config["circulating_market_cap_data_file"]
         self.weight_data_file = self.config["weight_data_file"]
@@ -73,7 +73,7 @@ class DataProvider:
             new_day_data = new_day_data.set_index(['date', 'code'])  # 设置双索引
             # 清洗数据
 
-            new_day_data = data_cleaner.outlier_replace(new_day_data)
+            # new_day_data = data_cleaner.outlier_replace(new_day_data)
             glog.info('Outlier replacement complete.')
             # 将新数据数据跟新到原有的整个数据中
             dfs_double_index = pd.concat([dfs_double_index, new_day_data])

@@ -1,8 +1,9 @@
-from . import base_config
+from config import base_config
+from utils import path_wrapper
 import sys
 
 sys.path.append("../..")
-from utils import path_wrapper
+
 
 market_data_path = path_wrapper.wrap_path(f"{base_config.base_data_path}/market_data")
 
@@ -35,4 +36,3 @@ cb_config = {
 
 
 }
-

@@ -1,9 +1,8 @@
 import pandas as pd
+from config import data_center_config
 import sys
 
 sys.path.append("../")
-
-from config import data_center_config
 
 
 class DataCenter:
@@ -25,11 +24,16 @@ class DataCenter:
         for data_info in stock_data_info:
             data_path = stock_data_info[data_info]['data_path']
             origin_data = pd.read_pickle(data_path)
-            stock_data_df = pd.merge(stock_data_df, origin_data, how='outer')
+            stock_data_df = pd.concat([stock_data_df, origin_data], axis=1)
+            # pd.merge(stock_data_df, origin_data, how='outer')
 
         stock_data_df.to_pickle(self.stock_daily_data_output_path)
 
 
-if __name__ == '__main__':
+def main():
     DC = DataCenter()
     DC.merge_daily_data_stock()
+
+
+if __name__ == '__main__':
+    main()
