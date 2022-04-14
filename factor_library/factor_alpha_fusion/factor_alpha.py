@@ -40,15 +40,14 @@ class FactorAlpha:
         grouped = market_data.groupby('code')
         for name, group in grouped:
             csv_data = group.reset_index().drop(columns='code')
-            csv_data.to_csv(os.path.join(self.config.csv_dir, name.replace('.', '') + '.csv'), sep=',', header=True,
+            csv_data.to_csv(os.path.join(self.config["csv_dir"], name.replace('.', '') + '.csv'), sep=',', header=True,
                             index=False)
-        dump_bin_script_path = self.config.dump_bin['dump_bin_script_path']
+        dump_bin_script_path = self.config['dump_bin_script_path']
         os.system(
             f'python3 {dump_bin_script_path} dump_all --csv_path '
             f'{csv_dir} --qlib_dir {qlib_dir} include_fields {self.config["include_fields"]} '
             f'--date_field_name {self.config["column_date"]}')
 
-        qlib.init(provider_uri=self.config.qlib_dir)
         self.instruments = D.instruments(market='all')
         glog.info("get_data finished")
 
@@ -60,10 +59,7 @@ class FactorAlpha:
             "fit_end_time": self.fit_end_time,
             "instruments": self.instruments
         }
-        # qlib.init()
-        # region in [REG_CN, REG_US]
-        provider_uri = "~/.qlib/qlib_data/cn_data"  # target_dir
-        qlib.init(provider_uri=provider_uri)
+
         h = Alpha158(**data_handler_config)
         df_feature_alpha158 = h.fetch(col_set="feature")
         new_columns_list = ['alpha158_' + str(i) for i, column_str in enumerate(df_feature_alpha158.columns, start=1)]
