@@ -1,8 +1,9 @@
-import base_config, data_config, factor_config
+from config import base_config, data_config, factor_config
+from utils import path_wrapper
 import sys
 
 sys.path.append("../..")
-from utils import path_wrapper
+
 
 data_center_path = path_wrapper.wrap_path(f"{base_config.base_data_path}/data_center/")
 stock_daily_data_output_path = f'{data_center_path}/stock_daily_data.pkl'
@@ -17,7 +18,11 @@ register_info = {
             "data_path": factor_config.alpha_fusion_factor_config['alpha_fusion_factor_path'],
             "other_info": None
         },
-        "other_data": None
+        "tech_factor": {
+            "data_path": factor_config.tech_factor_config['tech_factor_path'],
+            "other_info": None
+        },
+        # "other_data": None
     },
 
     "cb_data": {

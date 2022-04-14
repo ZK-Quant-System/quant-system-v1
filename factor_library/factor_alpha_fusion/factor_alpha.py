@@ -7,12 +7,12 @@ import qlib
 from qlib.data import D
 from qlib.contrib.data.handler import Alpha158
 from qlib.contrib.data.handler import Alpha360
+from config import factor_config, data_config
+from utils import path_wrapper
 import sys
 
 work_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(work_path)
-from config import factor_config, data_config
-from utils import path_wrapper
 
 
 class FactorAlpha:
@@ -60,7 +60,10 @@ class FactorAlpha:
             "fit_end_time": self.fit_end_time,
             "instruments": self.instruments
         }
-
+        # qlib.init()
+        # region in [REG_CN, REG_US]
+        provider_uri = "~/.qlib/qlib_data/cn_data"  # target_dir
+        qlib.init(provider_uri=provider_uri)
         h = Alpha158(**data_handler_config)
         df_feature_alpha158 = h.fetch(col_set="feature")
         new_columns_list = ['alpha158_' + str(i) for i, column_str in enumerate(df_feature_alpha158.columns, start=1)]

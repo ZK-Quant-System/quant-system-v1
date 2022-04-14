@@ -1,10 +1,10 @@
 import pandas as pd
 import glog
 import talib
+from config import factor_config, data_config
 import sys
 
 sys.path.append('../..')
-from config import factor_config, data_config
 
 
 class TechFactors:
@@ -261,7 +261,7 @@ class TechFactors:
         return self.df_tech_factor
 
     def run(self):
-        self.df_tech_factor = self.df_data.groupby(self.code).apply(TechFactors.get_tech_factor)
+        self.df_tech_factor = self.df_data.groupby(self.code).apply(self.get_tech_factor)
 
 
 def main():

@@ -1,4 +1,4 @@
-from . import base_config
+from config import base_config
 import qlib
 import os
 import sys
@@ -26,4 +26,3 @@ alpha_fusion_factor_config = {
     "column_date": 'date',
     "column_stock_id": '',
 }
-
