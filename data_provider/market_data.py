@@ -143,7 +143,8 @@ class DataProvider:
             coll.append('code')
             df = pd.DataFrame(columns=coll)
             for stock in self.target_stocks_list:
-                df_temp = {'date': list(new_day_data[stock].index.values), 'code': stock, 'groupby': new_day_data[stock]}
+                df_temp = {'date': list(new_day_data[stock].index.values), 'code': stock,
+                           'groupby': new_day_data[stock]}
                 df_temp = pd.DataFrame(df_temp)
                 df = pd.concat([df, df_temp])
             new_day_data = df.set_index(['date', 'code'])  # 设置双索引
@@ -414,5 +415,5 @@ def main(config_file):
 
 
 if __name__ == "__main__":
-    glog.info('Start program execution.')
+    glog.info('Start to get stock market data.')
     main()

@@ -1,8 +1,8 @@
 import datetime
+from config import base_config
 import sys
 
 sys.path.append("../")
-from config import base_config
 
 
 def get_current_date(date_format="%Y-%m-%d"):
@@ -12,7 +12,7 @@ def get_current_date(date_format="%Y-%m-%d"):
 
 
 def get_next_trading_date(date):
-    trading_date_list = global_config.trading_dates_df.trading_date.to_list()
+    trading_date_list = base_config.trading_dates_df.trading_date.to_list()
     try:
         current_date_index = trading_date_list.index(date)
     except ValueError:
@@ -23,7 +23,7 @@ def get_next_trading_date(date):
 
 
 def get_pre_trading_date(date):
-    trading_date_list = global_config.trading_dates_df.trading_date.to_list()
+    trading_date_list = base_config.trading_dates_df.trading_date.to_list()
     try:
         current_date_index = trading_date_list.index(date)
     except ValueError:

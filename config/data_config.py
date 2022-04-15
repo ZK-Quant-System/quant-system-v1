@@ -30,8 +30,12 @@ stock_config = {
 cb_config = {
     "legal_type_list": [float, int],
     "list_status": '正常上市',
-    "time_span": 2 * 365 * 24 * 60 * 60,
-    "fields": ['date', 'code', 'open', 'close', 'high', 'low', 'volume', 'money'],
+    "time_span": 2 * 250,
+    "fields_market": ['code', 'date', 'open', 'close', 'high', 'low', 'volume', 'money'],
+    "fields_basic": ['code', 'list_date', 'list_status', 'convert_code', 'convert_start_date', 'convert_end_date',
+                     'convert_price'],
+    "fields_price_adjust": ['code', 'adjust_date', 'new_convert_price'],
+    "clear_list": ['open', 'close', 'high', 'low', 'volume', 'money', 'convert_price'],
     "cb_market_data_file": f"{market_data_path}/conbond_market_data.pkl"
 
 
