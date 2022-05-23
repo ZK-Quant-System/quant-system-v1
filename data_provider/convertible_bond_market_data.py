@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from jqdatasdk import auth, bond, query, get_price
+from jqdatasdk import auth, bond, query
 import time
 import click
 import sys
@@ -80,6 +80,7 @@ class ConBondDataProvider:
                     self.fields_market]
                 df_m = pd.concat([df_m, df_temp])
             df_m = df_m.set_index(['code'])
+            # df_m.to_pickle(work_path + "/data/market_data/df_m.pkl")
             col = list(OrderedDict.fromkeys(self.fields_market + self.fields_basic))
             df_m_b = pd.DataFrame(columns=col)
             for code, df in df_m.groupby('code'):
@@ -93,15 +94,17 @@ class ConBondDataProvider:
                 df_price_adjust = bond.run_query(query(bond.CONBOND_CONVERT_PRICE_ADJUST).filter(
                     bond.CONBOND_CONVERT_PRICE_ADJUST.code == code))[self.fields_price_adjust]
                 df_price_adjust['adjust_date'] = pd.to_datetime(df_price_adjust['adjust_date'])
+                df_temp['date'] = pd.to_datetime(df_temp['date'])
                 # 进行调整后的可转债转股价调整
                 if min(df['date']) < min(df_price_adjust['adjust_date']):
-                    bins = [min(df['date'])] + list(df_price_adjust['adjust_date']) + [max(df['date'])]
+                    bins = [pd.to_datetime(min(df['date']))] + list(df_price_adjust['adjust_date']) + [pd.to_datetime(
+                        max(df['date']))]
                     convert_price = list(df_basic['convert_price']) + list(df_price_adjust['new_convert_price'])
                 else:
-                    bins = list(df_price_adjust['adjust_date']) + [max(df['date'])]
+                    bins = list(df_price_adjust['adjust_date']) + [pd.to_datetime(max(df['date']))]
                     convert_price = list(df_price_adjust['new_convert_price'])
                 df_temp['convert_price'] = pd.cut(df_temp['date'], bins=bins, labels=convert_price)
-                df_temp.reset_index()
+                df_temp = df_temp.reset_index()
                 df_m_b = pd.concat([df_m_b, df_temp])
             # 筛出正常上市的，并删除list_status和list_date列
             df_m_b = df_m_b[df_m_b['list_status'] == self.list_status].drop(columns=['list_date', 'list_status'])
@@ -121,7 +124,7 @@ class ConBondDataProvider:
 
 @click.command()
 @click.option("--config_file", help="the config file for ConBondDataProvider",
-              default=work_path + "/config/jq_account_config.json")
+              default=work_path + "/data_provider/jq_account_config.json")
 def main(config_file):
     with open(config_file) as f:
         data_provider_config = json.load(f)

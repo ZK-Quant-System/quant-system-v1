@@ -30,7 +30,7 @@ stock_config = {
 cb_config = {
     "legal_type_list": [float, int],
     "list_status": '正常上市',
-    "time_span": 2 * 250,
+    "time_span": 5 * 250,
     "fields_market": ['code', 'date', 'open', 'close', 'high', 'low', 'volume', 'money'],
     "fields_basic": ['code', 'list_date', 'list_status', 'convert_code', 'convert_start_date', 'convert_end_date',
                      'convert_price'],
