@@ -35,19 +35,22 @@ class FactorAlpha:
         csv_dir = path_wrapper.wrap_path(self.config["csv_dir"])
         qlib_dir = path_wrapper.wrap_path(self.config["qlib_dir"])
 
-        df_pickle = pd.read_pickle(data_config.market_data_path)
+        # df_pickle = pd.read_pickle(data_config.market_data_path)
+        df_pickle = pd.read_pickle('D:\QUANT\data\market_data_with_double_index.pkl')
         market_data = df_pickle.sort_index(level=1).swaplevel('date', 'code')
         grouped = market_data.groupby('code')
         for name, group in grouped:
             csv_data = group.reset_index().drop(columns='code')
             csv_data.to_csv(os.path.join(self.config["csv_dir"], name.replace('.', '') + '.csv'), sep=',', header=True,
                             index=False)
+
         dump_bin_script_path = self.config['dump_bin_script_path']
         os.system(
-            f'python3 {dump_bin_script_path} dump_all --csv_path '
+            f'python {dump_bin_script_path} dump_all --csv_path '
             f'{csv_dir} --qlib_dir {qlib_dir} include_fields {self.config["include_fields"]} '
-            f'--date_field_name {self.config["column_date"]}')
+            f'--date_field_name {self.config["column_date"]}')  # python3
 
+        qlib.init(provider_uri=qlib_dir)
         self.instruments = D.instruments(market='all')
         glog.info("get_data finished")
 
@@ -93,8 +96,9 @@ class FactorAlpha:
 
 
 def main():
-    qlib.init()
+    # qlib.init()
     factor_alpha = FactorAlpha()
+    factor_alpha.get_data()
     factor_alpha.run()
 
 
