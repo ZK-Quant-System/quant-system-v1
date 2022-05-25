@@ -20,17 +20,16 @@ sys.path.append(work_path)
 
 
 class ConBondDataProvider:
-    def __init__(self, data_provider_config):
+    def __init__(self, jq_account_config):
         self.config = data_config.cb_config
         self.time_span = self.config["time_span"]
         self.start_date = time.strftime('%Y-%m-%d', time.localtime(time.time() - self.time_span))
         self.end_date = time.strftime('%Y-%m-%d', time.localtime(time.time()))
-        self.jq_account = data_provider_config['jq_account']
-        self.jq_password = data_provider_config['jq_password']
+        self.jq_account = jq_account_config['jq_account']
+        self.jq_password = jq_account_config['jq_password']
         self.conbond_market_data_file = self.config['cb_market_data_file']
         self.trading_dates_file = base_config.trading_date_file
         self.legal_type_list = self.config["legal_type_list"]
-        self.conbond_code_list = []
         self.fields_market = self.config["fields_market"]
         self.fields_basic = self.config["fields_basic"]
         self.fields_price_adjust = self.config["fields_price_adjust"]
@@ -62,7 +61,7 @@ class ConBondDataProvider:
             # 清洗数据
             new_day_data = data_cleaner.outlier_replace(new_day_data)
             # 将新数据跟新到原有的整个数据中
-            dfs_double_index = pd.concat([dfs_double_index, new_day_data])
+            df_m_b = pd.concat([dfs_double_index, new_day_data])
         else:
             # 若无已有数据，则直接获取最新数据
             glog.info('Get all conbond data.')
@@ -80,7 +79,7 @@ class ConBondDataProvider:
                     self.fields_market]
                 df_m = pd.concat([df_m, df_temp])
             df_m = df_m.set_index(['code'])
-            # df_m.to_pickle(work_path + "/data/market_data/df_m.pkl")
+            # df_m.to_pickle(work_path + "/data/market_data/cb_m.pkl")
             col = list(OrderedDict.fromkeys(self.fields_market + self.fields_basic))
             df_m_b = pd.DataFrame(columns=col)
             for code, df in df_m.groupby('code'):
@@ -91,19 +90,29 @@ class ConBondDataProvider:
                 df_basic_n = df_basic_n.set_index(['code'])
                 df_temp = pd.concat([df, df_basic_n], axis=1)
                 # 得到一只可转债的转股价格调整数据
+                # glog.info(code)
                 df_price_adjust = bond.run_query(query(bond.CONBOND_CONVERT_PRICE_ADJUST).filter(
                     bond.CONBOND_CONVERT_PRICE_ADJUST.code == code))[self.fields_price_adjust]
+                df_price_adjust = df_price_adjust.drop_duplicates()
+                df_price_adjust = df_price_adjust.sort_values(by=['adjust_date'], ascending=[True])
                 df_price_adjust['adjust_date'] = pd.to_datetime(df_price_adjust['adjust_date'])
+                # 会出现转股价没有变，但是有公告的日期
+                df_price_adjust = df_price_adjust[df_price_adjust['new_convert_price'].ne(
+                    df_price_adjust['new_convert_price'].shift())]
                 df_temp['date'] = pd.to_datetime(df_temp['date'])
-                # 进行调整后的可转债转股价调整
-                if min(df['date']) < min(df_price_adjust['adjust_date']):
-                    bins = [pd.to_datetime(min(df['date']))] + list(df_price_adjust['adjust_date']) + [pd.to_datetime(
-                        max(df['date']))]
+                # 进行可转债转股价调整
+                if pd.to_datetime(df_basic['list_date'][0]) < min(df_price_adjust['adjust_date']):
+                    bins = [pd.to_datetime(df_basic['list_date'][0])] + list(df_price_adjust['adjust_date']) + [
+                        pd.to_datetime(max(df['date']))]
                     convert_price = list(df_basic['convert_price']) + list(df_price_adjust['new_convert_price'])
                 else:
                     bins = list(df_price_adjust['adjust_date']) + [pd.to_datetime(max(df['date']))]
                     convert_price = list(df_price_adjust['new_convert_price'])
-                df_temp['convert_price'] = pd.cut(df_temp['date'], bins=bins, labels=convert_price)
+                # 可能提前发布公告，在今天之后的某天更改转股价
+                if bins[-1] <= bins[-2]:
+                    bins.pop()
+                    convert_price.pop()
+                df_temp['convert_price'] = pd.cut(df_temp['date'], bins=bins, labels=convert_price, ordered=False)
                 df_temp = df_temp.reset_index()
                 df_m_b = pd.concat([df_m_b, df_temp])
             # 筛出正常上市的，并删除list_status和list_date列
@@ -116,7 +125,6 @@ class ConBondDataProvider:
         # 存为pkl格式
         df_m_b.to_pickle(self.conbond_market_data_file)
         glog.info('Data stored.')
-
 
     def data_to_mongo(self):
         pass
