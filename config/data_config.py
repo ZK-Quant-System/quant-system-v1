@@ -5,7 +5,8 @@ import sys
 sys.path.append("../..")
 
 
-market_data_path = path_wrapper.wrap_path(f"{base_config.base_data_path}/market_data")
+# market_data_path = path_wrapper.wrap_path(f"{base_config.base_data_path}/market_data")
+market_data_path = ('D:\QUANT\data\market_data_with_double_index.pkl')
 
 stock_config = {
     "stock_index_list": ['000905.XSHG'],

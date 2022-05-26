@@ -10,6 +10,8 @@ from qlib.contrib.data.handler import Alpha360
 from config import factor_config, data_config
 from utils import path_wrapper
 import sys
+from factor_library.factor_alpha101 import alpha101
+
 
 work_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(work_path)
@@ -23,9 +25,10 @@ class FactorAlpha:
         self.fit_start_time = self.config["fit_start_time"]
         self.fit_end_time = self.config["fit_end_time"]
         self.instruments = None
+        self.df_data = pd.read_pickle(data_config.market_data_path)
         glog.info("init finished")
 
-    def get_data(self):
+    def get_qlib_data(self):
         """
         调用dump_bin.py将csv格式数据转化为qlib格式，dump_bin.py的路径一般为”qlib/scripts/dump_bin.py“
         --csv_path --qlib_dir分别后跟csv所在路径、qlib格式数据输出所在路径；include_fields 后跟待转换的列
@@ -36,8 +39,7 @@ class FactorAlpha:
         qlib_dir = path_wrapper.wrap_path(self.config["qlib_dir"])
 
         # df_pickle = pd.read_pickle(data_config.market_data_path)
-        df_pickle = pd.read_pickle('D:\QUANT\data\market_data_with_double_index.pkl')
-        market_data = df_pickle.sort_index(level=1).swaplevel('date', 'code')
+        market_data = self.df_data.sort_index(level=1).swaplevel('date', 'code')
         grouped = market_data.groupby('code')
         for name, group in grouped:
             csv_data = group.reset_index().drop(columns='code')
@@ -64,12 +66,12 @@ class FactorAlpha:
         }
 
         h = Alpha158(**data_handler_config)
-        df_feature_alpha158 = h.fetch(col_set="feature")
-        new_columns_list = ['alpha158_' + str(i) for i, column_str in enumerate(df_feature_alpha158.columns, start=1)]
+        df_alpha158 = h.fetch(col_set="feature")
+        new_columns_list = ['alpha158_' + str(i) for i, column_str in enumerate(df_alpha158.columns, start=1)]
         new_columns = pd.Index(new_columns_list)
-        df_feature_alpha158.columns = new_columns
+        df_alpha158.columns = new_columns
         glog.info("get_alpha158 finished")
-        return df_feature_alpha158
+        return df_alpha158
 
     def get_alpha360(self):
         data_handler_config = {
@@ -81,15 +83,32 @@ class FactorAlpha:
         }
 
         h = Alpha360(**data_handler_config)
-        df_feature_alpha360 = h.fetch(col_set="feature")
-        new_columns_list = ['alpha360_' + str(i) for i, column_str in enumerate(df_feature_alpha360.columns, start=1)]
+        df_alpha360 = h.fetch(col_set="feature")
+        new_columns_list = ['alpha360_' + str(i) for i, column_str in enumerate(df_alpha360.columns, start=1)]
         new_columns = pd.Index(new_columns_list)
-        df_feature_alpha360.columns = new_columns
+        df_alpha360.columns = new_columns
         glog.info("get_alpha360 finished")
-        return df_feature_alpha360
+        return df_alpha360
+
+    def get_alpha101(self):
+        market_data = self.df_data.sort_index(level=1).swaplevel('date', 'code')
+        grouped = market_data.groupby('code')
+        df_alpha101 = pd.DataFrame()
+        for name, group in grouped:
+            df = pd.DataFrame()
+            for i in range(1, 102):
+                factor_function = getattr(alpha101.Alpha101(group), 'alpha' + str(i))
+                df_alpha = factor_function()
+                df = pd.concat([df, df_alpha], axis=1)
+            df_alpha101 = pd.concat([df_alpha101, df])
+        df_alpha101.columns = ['alpha101_' + str(i) for i, column_str in enumerate(df_alpha101.columns, start=1)]
+        print(df_alpha101)
+        return df_alpha101
 
     def run(self):
+        self.get_qlib_data()
         factor_alpha = pd.merge(self.get_alpha158(), self.get_alpha360(), left_index=True, right_index=True)
+        factor_alpha = pd.merge(factor_alpha, self.get_alpha101(), left_index=True, right_index=True)
         factor_alpha.to_pickle(self.config['alpha_fusion_factor_path'])
         shutil.rmtree(self.config['csv_dir'])
         shutil.rmtree(self.config['qlib_dir'])
@@ -98,7 +117,6 @@ class FactorAlpha:
 def main():
     # qlib.init()
     factor_alpha = FactorAlpha()
-    factor_alpha.get_data()
     factor_alpha.run()
 
 

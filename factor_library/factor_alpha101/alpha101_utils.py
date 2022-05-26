@@ -108,7 +108,7 @@ def delay(df, period):
 
 # 截面数据排序，输出boolean值
 def rank(df):
-    return df.rank(pct=True, axis=1)
+    return df.rank(pct=True)
 
 
 # 缩放时间序列，使其和为1
