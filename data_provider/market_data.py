@@ -102,8 +102,9 @@ class DataProvider:
                 dfs_double_index = pd.concat([dfs_double_index, df_temp])
             dfs_double_index = dfs_double_index.sort_values(by=['date', 'code'], ascending=[True, True])
             dfs_double_index = dfs_double_index.set_index(['date', 'code'])
+            dfs_double_index = dfs_double_index.rename(columns={'avg': 'vwap', 'factor': 'radj_factor'})
+            dfs_double_index = data_cleaner.data_replace(dfs_double_index, handle_constant=False)
 
-        dfs_double_index = dfs_double_index.rename(columns={'avg': 'vwap'})
         glog.info('Data obtained.')
         # 存为pkl格式
         dfs_double_index.to_pickle(self.market_data_file)
