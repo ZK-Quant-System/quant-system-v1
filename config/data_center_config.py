@@ -14,10 +14,10 @@ register_info = {
             "data_path": data_config.stock_config['market_data_file'],
             "other_info": None
         },
-        "factor_alpha": {
-            "data_path": factor_config.alpha_fusion_factor_config['alpha_fusion_factor_path'],
-            "other_info": None
-        },
+        # "factor_alpha": {
+        #     "data_path": factor_config.alpha_fusion_factor_config['alpha_fusion_factor_path'],
+        #     "other_info": None
+        # },
         "tech_factor": {
             "data_path": factor_config.tech_factor_config['tech_factor_path'],
             "other_info": None

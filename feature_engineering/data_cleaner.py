@@ -2,6 +2,7 @@ import numpy as np
 from config import base_config
 import pandas as pd
 from sklearn.impute import KNNImputer
+import glog
 import sys
 sys.path.append('../')
 
@@ -194,18 +195,21 @@ def data_replace(df_feature: pd.DataFrame, method: str = 'ffill', null_scale: fl
     :param handle_constant: 是否对恒定值的列进行删除
     :return: df_feature：经过缺失值填充过后的所有股票的所有特征因子的dataframe
     """
+    glog.info(f"Start data replacing.")
+
     col = ['date', 'code']+list(df_feature.columns.values)
     df_feature_replaced = pd.DataFrame(columns=col)
     for code, df in df_feature.groupby('code'):
         # glog.info('Eliminate columns with missing values exceeding the threshold and constant.')
-        df = null_judgment(df, null_scale=null_scale)
         if handle_constant:
             df = constant_handing(df)
+
+        df = null_judgment(df, null_scale=null_scale)
         # glog.info('Fill the missing value.')
         df = df.apply(missing_value_handing, method=method)
         df = df.reset_index()
         df_feature_replaced = pd.concat([df_feature_replaced, df])
     df_feature_replaced = df_feature_replaced.sort_values(by=['date', 'code'], ascending=[True, True])
     df_feature_replaced = df_feature_replaced.set_index(['date', 'code'])
-    # glog.info('Data replacement complete.')
+    glog.info('Data replacement complete.')
     return df_feature_replaced

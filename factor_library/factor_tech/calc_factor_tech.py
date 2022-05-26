@@ -11,8 +11,6 @@ sys.path.append('../..')
 class TechFactorsCalculator:
     def __init__(self, df_data):
         self.df_data = df_data
-        self.date = df_data['date']
-        self.code = df_data['code']
 
     @staticmethod
     def get_tech_factor(df_market_data):
@@ -29,7 +27,7 @@ class TechFactorsCalculator:
         tech_factor_map['date'] = _date
         tech_factor_map['code'] = _code
 
-        glog.info(f'{_code[0]} Get cycle indicators.')
+        glog.info(f'{_code.iloc[0]} Get cycle indicators.')
         tech_factor_map['HT_DCPERIOD'] = talib.HT_DCPERIOD(_close)  # Cycle Indicators
         tech_factor_map['HT_DCPHASE'] = talib.HT_DCPHASE(_close)  # Cycle Indicators
         tech_factor_map['HT_PHASOR_inphase'], tech_factor_map['HT_PHASOR_quadrature'] = talib.HT_PHASOR(
@@ -38,7 +36,7 @@ class TechFactorsCalculator:
             _close)  # Cycle Indicators
         tech_factor_map['HT_TRENDMODE'] = talib.HT_TRENDMODE(_close)  # Cycle Indicators
 
-        glog.info(f'{_code[0]} Get overlap studies indicators.')
+        glog.info(f'{_code.iloc[0]} Get overlap studies indicators.')
         tech_factor_map['HT_TRENDLINE'] = talib.HT_TRENDLINE(_close)  # Overlap Studies
         tech_factor_map['MAMA_mama'], tech_factor_map['MAMA_fama'] = talib.MAMA(_close, fastlimit=0.5,
                                                                                 slowlimit=0.05)
@@ -63,7 +61,7 @@ class TechFactorsCalculator:
         tech_factor_map['MIDPRICE'] = talib.MIDPRICE(_high, _low, timeperiod=14)  # Overlap Studies
         tech_factor_map['T3'] = talib.T3(_close, timeperiod=5, vfactor=0.7)  # Overlap Studies
 
-        glog.info(f'{_code[0]} Get volatility indicators.')
+        glog.info(f'{_code.iloc[0]} Get volatility indicators.')
         tech_factor_map['TRANGE'] = talib.TRANGE(_high, _low, _close)  # Volatility Indicators
         tech_factor_map['ATR'] = talib.ATR(_high, _low, _close, timeperiod=14)  # Volatility Indicators
         tech_factor_map['NATR'] = talib.NATR(_high, _low, _close,
@@ -74,7 +72,7 @@ class TechFactorsCalculator:
         tech_factor_map['ADOSC'] = talib.ADOSC(_high, _low, _close, _volume, fastperiod=3,
                                                slowperiod=10)  # _volume Indicators
 
-        glog.info(f'{_code[0]} Get momentum indicators.')
+        glog.info(f'{_code.iloc[0]} Get momentum indicators.')
         tech_factor_map['BOP'] = talib.BOP(_open, _high, _low, _close)  # Momentum Indicators
         tech_factor_map['ADX'] = talib.ADX(_high, _low, _close, timeperiod=14)  # Momentum Indicators
         tech_factor_map['ADXR'] = talib.ADXR(_high, _low, _close, timeperiod=14)  # Momentum Indicators
@@ -137,7 +135,7 @@ class TechFactorsCalculator:
                                                  timeperiod1=7, timeperiod2=14,
                                                  timeperiod3=28)  # Momentum Indicators
 
-        glog.info(f'{_code[0]} Get pattern recognition indicators.')
+        glog.info(f'{_code.iloc[0]} Get pattern recognition indicators.')
         tech_factor_map['CDL2CROWS'] = talib.CDL2CROWS(_open, _high, _low,
                                                        _close)  # Pattern Recognition
         tech_factor_map['CDL3BLACKCROWS'] = talib.CDL3BLACKCROWS(_open, _high, _low,
@@ -267,9 +265,10 @@ class TechFactorsCalculator:
 
 
 def main():
-    glog.info(f"start calculating tech factor.")
+    glog.info(f"Start calculating tech factor.")
     df_data = pd.read_pickle(data_config.stock_config['market_data_file'])
-    df_data = data_cleaner.data_replace(df_data.iloc[:1000], handle_constant=False)
+
+    df_data = data_cleaner.data_replace(df_data, handle_constant=False)
 
     df_data = df_data.reset_index()
     tfc = TechFactorsCalculator(df_data)
@@ -278,6 +277,7 @@ def main():
     df_tech_factor = df_tech_factor.set_index(['date', 'code'])
     df_tech_factor.to_pickle(factor_config.tech_factor_config['tech_factor_path'])
 
+    glog.info(f"End calculating tech factor.")
 
 if __name__ == "__main__":
     main()

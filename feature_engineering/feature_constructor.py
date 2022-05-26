@@ -8,12 +8,11 @@ from sklearn.cluster import KMeans
 from sklearn.preprocessing import Binarizer
 from scipy import stats
 from sklearn.preprocessing import LabelEncoder
-from sklearn.preprocessing import OneHotEncoder
 from gplearn.genetic import SymbolicTransformer
 from config import feature_pipeline_config
 
 
-def label_ret(df:pd.DataFrame, n):
+def label_ret(df: pd.DataFrame, n):
     df_label = df.pct_change(periods=n)
     return df_label
 
@@ -97,7 +96,7 @@ def feature_exp(df_feature: pd.DataFrame):
 
 def feature_diff(df_feature: pd.DataFrame):
     data = df_feature.diff()
-    data.columns = 'diff_'+ df_feature.columns
+    data.columns = 'diff_' + df_feature.columns
     data.index = df_feature.index
     return data
 
@@ -114,7 +113,7 @@ def symbolictransformer(features: pd.DataFrame, target: pd.DataFrame, prop: floa
     target = np.array(target)
     gp = SymbolicTransformer(generations=10, population_size=1000,
                              hall_of_fame=100, n_components=10,
-                             function_set=feature_config.function_set,
+                             function_set=feature_pipeline_config.feature_constructor_config["function_set"],
                              parsimony_coefficient=0.0005,
                              max_samples=0.9, verbose=1,
                              random_state=0, n_jobs=3)
@@ -122,8 +121,9 @@ def symbolictransformer(features: pd.DataFrame, target: pd.DataFrame, prop: floa
     gp.fit(features[:num, :], target[:num])
     gp_features = gp.transform(features)
     features_df = pd.DataFrame(gp_features)
-    features_df.columns = ['SymbolicTransformer_' + str(i) for i in range(features_df.shape[0]) ]
+    features_df.columns = ['SymbolicTransformer_' + str(i) for i in range(features_df.shape[0])]
     return features_df
+
 
 def kmeans(df_feature: pd.DataFrame, feature, k):
     """
@@ -146,7 +146,7 @@ def kmeans(df_feature: pd.DataFrame, feature, k):
     return df_new
 
 
-def BoxCox(df_feature: pd.DataFrame):
+def box_cox(df_feature: pd.DataFrame):
     """
     Box-Cox变换：须输入正数
     """
@@ -187,5 +187,5 @@ def labelencoder(df_feature):
     return df_new
 
 
-def onehotencoder(factor):
+def onehotencoder():
     pass
