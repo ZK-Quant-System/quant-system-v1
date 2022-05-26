@@ -125,7 +125,7 @@ def missing_value_handing(factor_series: pd.Series, method='ffill', rolling_span
         # glog.info('ffill前填充')
         if factor_series[0] == np.nan:
             factor_series[0] = 0
-        factor_series = factor_series.fillna(method='ffill')
+        factor_series = factor_series.fillna(method='ffill').fillna(method='bfill')
     elif method == 'rolling_mean':
         # glog.info('rolling_mean滚动均值')
         if rolling_span < 2:
@@ -184,12 +184,14 @@ def timestamp_matching(df_feature: pd.DataFrame):
     return df_feature_matched
 
 
-def data_replace(df_feature: pd.DataFrame, method: str = 'ffill', null_scale: float = 0.8):
+def data_replace(df_feature: pd.DataFrame, method: str = 'ffill', null_scale: float = 0.8,
+                 handle_constant: bool = True):
     """
     数据填充函数：将feature表格的缺失值进行填充
     :param df_feature: 包括所有股票的所有特征因子的dataframe
     :param method: 填充方法：['ffill', 'rolling_mean', 'KNN']：字符型
     :param null_scale: 缺失值最大比例,缺失值比例多于null_scale的因子需被删除：浮点型
+    :param handle_constant: 是否对恒定值的列进行删除
     :return: df_feature：经过缺失值填充过后的所有股票的所有特征因子的dataframe
     """
     col = ['date', 'code']+list(df_feature.columns.values)
@@ -197,7 +199,8 @@ def data_replace(df_feature: pd.DataFrame, method: str = 'ffill', null_scale: fl
     for code, df in df_feature.groupby('code'):
         # glog.info('Eliminate columns with missing values exceeding the threshold and constant.')
         df = null_judgment(df, null_scale=null_scale)
-        df = constant_handing(df)
+        if handle_constant:
+            df = constant_handing(df)
         # glog.info('Fill the missing value.')
         df = df.apply(missing_value_handing, method=method)
         df = df.reset_index()
