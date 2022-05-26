@@ -2,279 +2,282 @@ import pandas as pd
 import glog
 import talib
 from config import factor_config, data_config
+from feature_engineering import data_cleaner
 import sys
 
 sys.path.append('../..')
 
 
-class TechFactors:
+class TechFactorsCalculator:
     def __init__(self, df_data):
         self.df_data = df_data
-        self.close = df_data['close']
-        self.open = df_data['open']
-        self.high = df_data['high']
-        self.low = df_data['low']
-        self.volume = df_data['volume']
-        self.money = df_data['money']
-        self.code = df_data['code']
         self.date = df_data['date']
-        self.df_tech_factor = pd.DataFrame()
+        self.code = df_data['code']
 
-    def get_tech_factor(self):
-        self.df_tech_factor['date'] = self.date
-        self.df_tech_factor['code'] = self.code
+    @staticmethod
+    def get_tech_factor(df_market_data):
+        _close = df_market_data['close']
+        _open = df_market_data['open']
+        _high = df_market_data['high']
+        _low = df_market_data['low']
+        _volume = df_market_data['volume']
+        _code = df_market_data['code']
+        _date = df_market_data['date']
 
-        glog.info('Get cycle indicators.')
-        self.df_tech_factor['HT_DCPERIOD'] = talib.HT_DCPERIOD(self.close)  # Cycle Indicators
-        self.df_tech_factor['HT_DCPHASE'] = talib.HT_DCPHASE(self.close)  # Cycle Indicators
-        self.df_tech_factor['HT_PHASOR_inphase'], self.df_tech_factor['HT_PHASOR_quadrature'] = talib.HT_PHASOR(
-            self.close)  # Cycle Indicators
-        self.df_tech_factor['HT_SINE_sine'], self.df_tech_factor['HT_SINE_leadsine'] = talib.HT_SINE(
-            self.close)  # Cycle Indicators
-        self.df_tech_factor['HT_TRENDMODE'] = talib.HT_TRENDMODE(self.close)  # Cycle Indicators
+        tech_factor_map = dict()
 
-        glog.info('Get overlap studies indicators.')
-        self.df_tech_factor['HT_TRENDLINE'] = talib.HT_TRENDLINE(self.close)  # Overlap Studies
-        self.df_tech_factor['MAMA_mama'], self.df_tech_factor['MAMA_fama'] = talib.MAMA(self.close, fastlimit=0.5,
-                                                                                        slowlimit=0.05)
-        self.df_tech_factor['SAR'] = talib.SAR(self.high, self.low, acceleration=0.02, maximum=0.2)  # Overlap Studies
-        self.df_tech_factor['SAREXT'] = talib.SAREXT(self.high, self.low, startvalue=0, offsetonreverse=0,
-                                                     accelerationinitlong=0.02,
-                                                     accelerationlong=0.2, accelerationmaxlong=0.02,
-                                                     accelerationinitshort=0.02, accelerationshort=0.02,
-                                                     accelerationmaxshort=0.2)  # Overlap Studies
-        self.df_tech_factor['BBANDS_upperband'], self.df_tech_factor['BBANDS_middleband'], self.df_tech_factor[
-            'BBANDS_lowerband'] = talib.BBANDS(self.close, timeperiod=5, nbdevup=2, nbdevdn=2,
-                                               matype=0)  # Overlap Studies
-        self.df_tech_factor['DEMA'] = talib.DEMA(self.close, timeperiod=30)  # Overlap Studies
-        self.df_tech_factor['EMA'] = talib.EMA(self.close, timeperiod=30)  # Overlap Studies
-        self.df_tech_factor['KAMA'] = talib.KAMA(self.close, timeperiod=30)  # Overlap Studies
-        self.df_tech_factor['MA'] = talib.MA(self.close, timeperiod=30, matype=0)  # Overlap Studies
-        self.df_tech_factor['SMA'] = talib.SMA(self.close, timeperiod=30)  # Overlap Studies
-        self.df_tech_factor['TEMA'] = talib.TEMA(self.close, timeperiod=30)  # Overlap Studies
-        self.df_tech_factor['TRIMA'] = talib.TRIMA(self.close, timeperiod=30)  # Overlap Studies
-        self.df_tech_factor['WMA'] = talib.WMA(self.close, timeperiod=30)  # Overlap Studies
-        self.df_tech_factor['MIDPOINT'] = talib.MIDPOINT(self.close, timeperiod=14)  # Overlap Studies
-        self.df_tech_factor['MIDPRICE'] = talib.MIDPRICE(self.high, self.low, timeperiod=14)  # Overlap Studies
-        self.df_tech_factor['T3'] = talib.T3(self.close, timeperiod=5, vfactor=0.7)  # Overlap Studies
+        tech_factor_map['date'] = _date
+        tech_factor_map['code'] = _code
 
-        glog.info('Get volatility indicators.')
-        self.df_tech_factor['TRANGE'] = talib.TRANGE(self.high, self.low, self.close)  # Volatility Indicators
-        self.df_tech_factor['ATR'] = talib.ATR(self.high, self.low, self.close, timeperiod=14)  # Volatility Indicators
-        self.df_tech_factor['NATR'] = talib.NATR(self.high, self.low, self.close,
-                                                 timeperiod=14)  # Volatility Indicators
+        glog.info(f'{_code[0]} Get cycle indicators.')
+        tech_factor_map['HT_DCPERIOD'] = talib.HT_DCPERIOD(_close)  # Cycle Indicators
+        tech_factor_map['HT_DCPHASE'] = talib.HT_DCPHASE(_close)  # Cycle Indicators
+        tech_factor_map['HT_PHASOR_inphase'], tech_factor_map['HT_PHASOR_quadrature'] = talib.HT_PHASOR(
+            _close)  # Cycle Indicators
+        tech_factor_map['HT_SINE_sine'], tech_factor_map['HT_SINE_leadsine'] = talib.HT_SINE(
+            _close)  # Cycle Indicators
+        tech_factor_map['HT_TRENDMODE'] = talib.HT_TRENDMODE(_close)  # Cycle Indicators
 
-        self.df_tech_factor['AD'] = talib.AD(self.high, self.low, self.close, self.volume)  # Volume Indicators
-        self.df_tech_factor['OBV'] = talib.OBV(self.close, self.volume)  # Volume Indicators
-        self.df_tech_factor['ADOSC'] = talib.ADOSC(self.high, self.low, self.close, self.volume, fastperiod=3,
-                                                   slowperiod=10)  # Volume Indicators
+        glog.info(f'{_code[0]} Get overlap studies indicators.')
+        tech_factor_map['HT_TRENDLINE'] = talib.HT_TRENDLINE(_close)  # Overlap Studies
+        tech_factor_map['MAMA_mama'], tech_factor_map['MAMA_fama'] = talib.MAMA(_close, fastlimit=0.5,
+                                                                                slowlimit=0.05)
+        tech_factor_map['SAR'] = talib.SAR(_high, _low, acceleration=0.02, maximum=0.2)  # Overlap Studies
+        tech_factor_map['SAREXT'] = talib.SAREXT(_high, _low, startvalue=0, offsetonreverse=0,
+                                                 accelerationinitlong=0.02,
+                                                 accelerationlong=0.2, accelerationmaxlong=0.02,
+                                                 accelerationinitshort=0.02, accelerationshort=0.02,
+                                                 accelerationmaxshort=0.2)  # Overlap Studies
+        tech_factor_map['BBANDS_upperband'], tech_factor_map['BBANDS_middleband'], tech_factor_map[
+            'BBANDS__lowerband'] = talib.BBANDS(_close, timeperiod=5, nbdevup=2, nbdevdn=2,
+                                                matype=0)  # Overlap Studies
+        tech_factor_map['DEMA'] = talib.DEMA(_close, timeperiod=30)  # Overlap Studies
+        tech_factor_map['EMA'] = talib.EMA(_close, timeperiod=30)  # Overlap Studies
+        tech_factor_map['KAMA'] = talib.KAMA(_close, timeperiod=30)  # Overlap Studies
+        tech_factor_map['MA'] = talib.MA(_close, timeperiod=30, matype=0)  # Overlap Studies
+        tech_factor_map['SMA'] = talib.SMA(_close, timeperiod=30)  # Overlap Studies
+        tech_factor_map['TEMA'] = talib.TEMA(_close, timeperiod=30)  # Overlap Studies
+        tech_factor_map['TRIMA'] = talib.TRIMA(_close, timeperiod=30)  # Overlap Studies
+        tech_factor_map['WMA'] = talib.WMA(_close, timeperiod=30)  # Overlap Studies
+        tech_factor_map['MIDPOINT'] = talib.MIDPOINT(_close, timeperiod=14)  # Overlap Studies
+        tech_factor_map['MIDPRICE'] = talib.MIDPRICE(_high, _low, timeperiod=14)  # Overlap Studies
+        tech_factor_map['T3'] = talib.T3(_close, timeperiod=5, vfactor=0.7)  # Overlap Studies
 
-        glog.info('Get momentum indicators.')
-        self.df_tech_factor['BOP'] = talib.BOP(self.open, self.high, self.low, self.close)  # Momentum Indicators
-        self.df_tech_factor['ADX'] = talib.ADX(self.high, self.low, self.close, timeperiod=14)  # Momentum Indicators
-        self.df_tech_factor['ADXR'] = talib.ADXR(self.high, self.low, self.close, timeperiod=14)  # Momentum Indicators
-        self.df_tech_factor['AROON_aroondown'], self.df_tech_factor['AROON_aroondown'] = talib.AROON(self.high,
-                                                                                                     self.low,
-                                                                                                     timeperiod=14)
-        self.df_tech_factor['AROONOSC'] = talib.AROONOSC(self.high, self.low, timeperiod=14)  # Momentum Indicators
-        self.df_tech_factor['CCI'] = talib.CCI(self.high, self.low, self.close, timeperiod=14)  # Momentum Indicators
-        self.df_tech_factor['CMO'] = talib.CMO(self.close, timeperiod=14)  # Momentum Indicators
-        self.df_tech_factor['DX'] = talib.DX(self.high, self.low, self.close, timeperiod=14)  # Momentum Indicators
-        self.df_tech_factor['MFI'] = talib.MFI(self.high, self.low, self.close, self.volume,
-                                               timeperiod=14)  # Momentum Indicators
-        self.df_tech_factor['MINUS_DI'] = talib.MINUS_DI(self.high, self.low, self.close,
-                                                         timeperiod=14)  # Momentum Indicators
-        self.df_tech_factor['MINUS_DM'] = talib.MINUS_DM(self.high, self.low, timeperiod=14)  # Momentum Indicators
-        self.df_tech_factor['PLUS_DI'] = talib.PLUS_DI(self.high, self.low, self.close,
-                                                       timeperiod=14)  # Momentum Indicators
-        self.df_tech_factor['PLUS_DM'] = talib.PLUS_DM(self.high, self.low, timeperiod=14)  # Momentum Indicators
-        self.df_tech_factor['RSI'] = talib.RSI(self.close, timeperiod=14)  # Momentum Indicators
-        self.df_tech_factor['WILLR'] = talib.WILLR(self.high, self.low, self.close,
+        glog.info(f'{_code[0]} Get volatility indicators.')
+        tech_factor_map['TRANGE'] = talib.TRANGE(_high, _low, _close)  # Volatility Indicators
+        tech_factor_map['ATR'] = talib.ATR(_high, _low, _close, timeperiod=14)  # Volatility Indicators
+        tech_factor_map['NATR'] = talib.NATR(_high, _low, _close,
+                                             timeperiod=14)  # Volatility Indicators
+
+        tech_factor_map['AD'] = talib.AD(_high, _low, _close, _volume)  # _volume Indicators
+        tech_factor_map['OBV'] = talib.OBV(_close, _volume)  # _volume Indicators
+        tech_factor_map['ADOSC'] = talib.ADOSC(_high, _low, _close, _volume, fastperiod=3,
+                                               slowperiod=10)  # _volume Indicators
+
+        glog.info(f'{_code[0]} Get momentum indicators.')
+        tech_factor_map['BOP'] = talib.BOP(_open, _high, _low, _close)  # Momentum Indicators
+        tech_factor_map['ADX'] = talib.ADX(_high, _low, _close, timeperiod=14)  # Momentum Indicators
+        tech_factor_map['ADXR'] = talib.ADXR(_high, _low, _close, timeperiod=14)  # Momentum Indicators
+        tech_factor_map['AROON_aroondown'], tech_factor_map['AROON_aroondown'] = talib.AROON(_high,
+                                                                                             _low,
+                                                                                             timeperiod=14)
+        tech_factor_map['AROONOSC'] = talib.AROONOSC(_high, _low, timeperiod=14)  # Momentum Indicators
+        tech_factor_map['CCI'] = talib.CCI(_high, _low, _close, timeperiod=14)  # Momentum Indicators
+        tech_factor_map['CMO'] = talib.CMO(_close, timeperiod=14)  # Momentum Indicators
+        tech_factor_map['DX'] = talib.DX(_high, _low, _close, timeperiod=14)  # Momentum Indicators
+        tech_factor_map['MFI'] = talib.MFI(_high, _low, _close, _volume,
+                                           timeperiod=14)  # Momentum Indicators
+        tech_factor_map['MINUS_DI'] = talib.MINUS_DI(_high, _low, _close,
+                                                     timeperiod=14)  # Momentum Indicators
+        tech_factor_map['MINUS_DM'] = talib.MINUS_DM(_high, _low, timeperiod=14)  # Momentum Indicators
+        tech_factor_map['PLUS_DI'] = talib.PLUS_DI(_high, _low, _close,
                                                    timeperiod=14)  # Momentum Indicators
-        self.df_tech_factor['APO'] = talib.APO(self.close, fastperiod=12, slowperiod=26,
-                                               matype=0)  # Momentum Indicators
-        self.df_tech_factor['PPO'] = talib.PPO(self.close, fastperiod=12, slowperiod=26,
-                                               matype=0)  # Momentum Indicators
-        self.df_tech_factor['MACD_macd'], self.df_tech_factor[
-            'MACD_macdsignal'], self.df_tech_factor[
-            'MACD_macdhist'] = talib.MACD(self.close, fastperiod=12, slowperiod=26,
+        tech_factor_map['PLUS_DM'] = talib.PLUS_DM(_high, _low, timeperiod=14)  # Momentum Indicators
+        tech_factor_map['RSI'] = talib.RSI(_close, timeperiod=14)  # Momentum Indicators
+        tech_factor_map['WILLR'] = talib.WILLR(_high, _low, _close,
+                                               timeperiod=14)  # Momentum Indicators
+        tech_factor_map['APO'] = talib.APO(_close, fastperiod=12, slowperiod=26,
+                                           matype=0)  # Momentum Indicators
+        tech_factor_map['PPO'] = talib.PPO(_close, fastperiod=12, slowperiod=26,
+                                           matype=0)  # Momentum Indicators
+        tech_factor_map['MACD_macd'], tech_factor_map[
+            'MACD_macdsignal'], tech_factor_map[
+            'MACD_macdhist'] = talib.MACD(_close, fastperiod=12, slowperiod=26,
                                           signalperiod=9)  # Momentum Indicators
-        self.df_tech_factor['MACDEXT_macd'], self.df_tech_factor[
-            'MACDEXT_macdsignal'], self.df_tech_factor[
-            'MACDEXT_macdhist'] = talib.MACDEXT(self.close, fastperiod=12,
+        tech_factor_map['MACDEXT_macd'], tech_factor_map[
+            'MACDEXT_macdsignal'], tech_factor_map[
+            'MACDEXT_macdhist'] = talib.MACDEXT(_close, fastperiod=12,
                                                 fastmatype=0, slowperiod=26,
                                                 slowmatype=0,
                                                 signalperiod=9,
                                                 signalmatype=0)  # Momentum Indicators
-        self.df_tech_factor['MACDFIX_macd'], self.df_tech_factor['MACDFIX_macdsignal'], self.df_tech_factor[
-            'MACDFIX_macdhist'] = talib.MACDFIX(self.close, signalperiod=9)  # Momentum Indicators
-        self.df_tech_factor['MOM'] = talib.MOM(self.close, timeperiod=10)  # Momentum Indicators
-        self.df_tech_factor['ROC'] = talib.ROC(self.close, timeperiod=10)  # Momentum Indicators
-        self.df_tech_factor['ROCP'] = talib.ROCP(self.close, timeperiod=10)  # Momentum Indicators
-        self.df_tech_factor['ROCR'] = talib.ROCR(self.close, timeperiod=10)  # Momentum Indicators
-        self.df_tech_factor['ROCR100'] = talib.ROCR100(self.close, timeperiod=10)  # Momentum Indicators
-        self.df_tech_factor['TRIX'] = talib.TRIX(self.close, timeperiod=30)  # Momentum Indicators
-        self.df_tech_factor['STOCH_slowk'], self.df_tech_factor[
-            'STOCH_slowd'] = talib.STOCH(self.high, self.low, self.close,
+        tech_factor_map['MACDFIX_macd'], tech_factor_map['MACDFIX_macdsignal'], tech_factor_map[
+            'MACDFIX_macdhist'] = talib.MACDFIX(_close, signalperiod=9)  # Momentum Indicators
+        tech_factor_map['MOM'] = talib.MOM(_close, timeperiod=10)  # Momentum Indicators
+        tech_factor_map['ROC'] = talib.ROC(_close, timeperiod=10)  # Momentum Indicators
+        tech_factor_map['ROCP'] = talib.ROCP(_close, timeperiod=10)  # Momentum Indicators
+        tech_factor_map['ROCR'] = talib.ROCR(_close, timeperiod=10)  # Momentum Indicators
+        tech_factor_map['ROCR100'] = talib.ROCR100(_close, timeperiod=10)  # Momentum Indicators
+        tech_factor_map['TRIX'] = talib.TRIX(_close, timeperiod=30)  # Momentum Indicators
+        tech_factor_map['STOCH_slowk'], tech_factor_map[
+            'STOCH_slowd'] = talib.STOCH(_high, _low, _close,
                                          fastk_period=5, slowk_period=3,
                                          slowk_matype=0, slowd_period=3,
                                          slowd_matype=0)  # Momentum Indicators
-        self.df_tech_factor['STOCHF_fastk'], self.df_tech_factor[
-            'STOCHF_fastd'] = talib.STOCHF(self.high, self.low, self.close,
+        tech_factor_map['STOCHF_fastk'], tech_factor_map[
+            'STOCHF_fastd'] = talib.STOCHF(_high, _low, _close,
                                            fastk_period=5, fastd_period=3,
                                            fastd_matype=0)  # Momentum Indicators
-        self.df_tech_factor['STOCHRSI_fastk'], self.df_tech_factor[
-            'STOCHRSI_fastd'] = talib.STOCHRSI(self.close, timeperiod=14,
+        tech_factor_map['STOCHRSI_fastk'], tech_factor_map[
+            'STOCHRSI_fastd'] = talib.STOCHRSI(_close, timeperiod=14,
                                                fastk_period=5,
                                                fastd_period=3,
                                                fastd_matype=0)  # Momentum Indicators
-        self.df_tech_factor['ULTOSC'] = talib.ULTOSC(self.high, self.low, self.close,
-                                                     timeperiod1=7, timeperiod2=14,
-                                                     timeperiod3=28)  # Momentum Indicators
+        tech_factor_map['ULTOSC'] = talib.ULTOSC(_high, _low, _close,
+                                                 timeperiod1=7, timeperiod2=14,
+                                                 timeperiod3=28)  # Momentum Indicators
 
-        glog.info('Get pattern recognition indicators.')
-        self.df_tech_factor['CDL2CROWS'] = talib.CDL2CROWS(self.open, self.high, self.low,
-                                                           self.close)  # Pattern Recognition
-        self.df_tech_factor['CDL3BLACKCROWS'] = talib.CDL3BLACKCROWS(self.open, self.high, self.low,
-                                                                     self.close)  # Pattern Recognition
-        self.df_tech_factor['CDL3INSIDE'] = talib.CDL3INSIDE(self.open, self.high, self.low,
-                                                             self.close)  # Pattern Recognition
-        self.df_tech_factor['CDL3LINESTRIKE'] = talib.CDL3LINESTRIKE(self.open, self.high, self.low,
-                                                                     self.close)  # Pattern Recognition
-        self.df_tech_factor['CDL3OUTSIDE'] = talib.CDL3OUTSIDE(self.open, self.high, self.low,
-                                                               self.close)  # Pattern Recognition
-        self.df_tech_factor['CDL3STARSINSOUTH'] = talib.CDL3STARSINSOUTH(self.open, self.high, self.low,
-                                                                         self.close)  # Pattern Recognition
-        self.df_tech_factor['CDL3WHITESOLDIERS'] = talib.CDL3WHITESOLDIERS(self.open, self.high, self.low,
-                                                                           self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLADVANCEBLOCK'] = talib.CDLADVANCEBLOCK(self.open, self.high, self.low,
-                                                                       self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLBELTHOLD'] = talib.CDLBELTHOLD(self.open, self.high, self.low,
-                                                               self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLBREAKAWAY'] = talib.CDLBREAKAWAY(self.open, self.high, self.low,
-                                                                 self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLCLOSINGMARUBOZU'] = talib.CDLCLOSINGMARUBOZU(self.open, self.high, self.low,
-                                                                             self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLCONCEALBABYSWALL'] = talib.CDLCONCEALBABYSWALL(self.open, self.high, self.low,
-                                                                               self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLCOUNTERATTACK'] = talib.CDLCOUNTERATTACK(self.open, self.high, self.low,
-                                                                         self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLDOJI'] = talib.CDLDOJI(self.open, self.high, self.low,
-                                                       self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLDOJISTAR'] = talib.CDLDOJISTAR(self.open, self.high, self.low,
-                                                               self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLDRAGONFLYDOJI'] = talib.CDLDRAGONFLYDOJI(self.open, self.high, self.low,
-                                                                         self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLENGULFING'] = talib.CDLENGULFING(self.open, self.high, self.low,
-                                                                 self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLGAPSIDESIDEWHITE'] = talib.CDLGAPSIDESIDEWHITE(self.open, self.high, self.low,
-                                                                               self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLGRAVESTONEDOJI'] = talib.CDLGRAVESTONEDOJI(self.open, self.high, self.low,
-                                                                           self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLHAMMER'] = talib.CDLHAMMER(self.open, self.high, self.low,
-                                                           self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLHANGINGMAN'] = talib.CDLHANGINGMAN(self.open, self.high, self.low,
-                                                                   self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLHARAMI'] = talib.CDLHARAMI(self.open, self.high, self.low,
-                                                           self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLHARAMICROSS'] = talib.CDLHARAMICROSS(self.open, self.high, self.low,
-                                                                     self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLHIGHWAVE'] = talib.CDLHIGHWAVE(self.open, self.high, self.low,
-                                                               self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLHIKKAKE'] = talib.CDLHIKKAKE(self.open, self.high, self.low,
-                                                             self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLHIKKAKEMOD'] = talib.CDLHIKKAKEMOD(self.open, self.high, self.low,
-                                                                   self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLHOMINGPIGEON'] = talib.CDLHOMINGPIGEON(self.open, self.high, self.low,
-                                                                       self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLIDENTICAL3CROWS'] = talib.CDLIDENTICAL3CROWS(self.open, self.high, self.low,
-                                                                             self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLINNECK'] = talib.CDLINNECK(self.open, self.high, self.low,
-                                                           self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLINVERTEDHAMMER'] = talib.CDLINVERTEDHAMMER(self.open, self.high, self.low,
-                                                                           self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLKICKING'] = talib.CDLKICKING(self.open, self.high, self.low,
-                                                             self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLKICKINGBYLENGTH'] = talib.CDLKICKINGBYLENGTH(self.open, self.high, self.low,
-                                                                             self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLLADDERBOTTOM'] = talib.CDLLADDERBOTTOM(self.open, self.high, self.low,
-                                                                       self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLLONGLEGGEDDOJI'] = talib.CDLLONGLEGGEDDOJI(self.open, self.high, self.low,
-                                                                           self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLLONGLINE'] = talib.CDLLONGLINE(self.open, self.high, self.low,
-                                                               self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLMARUBOZU'] = talib.CDLMARUBOZU(self.open, self.high, self.low,
-                                                               self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLMATCHINGLOW'] = talib.CDLMATCHINGLOW(self.open, self.high, self.low,
-                                                                     self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLONNECK'] = talib.CDLONNECK(self.open, self.high, self.low,
-                                                           self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLPIERCING'] = talib.CDLPIERCING(self.open, self.high, self.low,
-                                                               self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLRICKSHAWMAN'] = talib.CDLRICKSHAWMAN(self.open, self.high, self.low,
-                                                                     self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLRISEFALL3METHODS'] = talib.CDLRISEFALL3METHODS(self.open, self.high, self.low,
-                                                                               self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLSEPARATINGLINES'] = talib.CDLSEPARATINGLINES(self.open, self.high, self.low,
-                                                                             self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLSHOOTINGSTAR'] = talib.CDLSHOOTINGSTAR(self.open, self.high, self.low,
-                                                                       self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLSHORTLINE'] = talib.CDLSHORTLINE(self.open, self.high, self.low,
-                                                                 self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLSPINNINGTOP'] = talib.CDLSPINNINGTOP(self.open, self.high, self.low,
-                                                                     self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLSTALLEDPATTERN'] = talib.CDLSTALLEDPATTERN(self.open, self.high, self.low,
-                                                                           self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLSTICKSANDWICH'] = talib.CDLSTICKSANDWICH(self.open, self.high, self.low,
-                                                                         self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLTAKURI'] = talib.CDLTAKURI(self.open, self.high, self.low,
-                                                           self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLTASUKIGAP'] = talib.CDLTASUKIGAP(self.open, self.high, self.low,
-                                                                 self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLTHRUSTING'] = talib.CDLTHRUSTING(self.open, self.high, self.low,
-                                                                 self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLTRISTAR'] = talib.CDLTRISTAR(self.open, self.high, self.low,
-                                                             self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLUNIQUE3RIVER'] = talib.CDLUNIQUE3RIVER(self.open, self.high, self.low,
-                                                                       self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLUPSIDEGAP2CROWS'] = talib.CDLUPSIDEGAP2CROWS(self.open, self.high, self.low,
-                                                                             self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLXSIDEGAP3METHODS'] = talib.CDLXSIDEGAP3METHODS(self.open, self.high, self.low,
-                                                                               self.close)  # Pattern Recognition
-        self.df_tech_factor['CDLABANDONEDBABY'] = talib.CDLABANDONEDBABY(self.open, self.high, self.low, self.close,
+        glog.info(f'{_code[0]} Get pattern recognition indicators.')
+        tech_factor_map['CDL2CROWS'] = talib.CDL2CROWS(_open, _high, _low,
+                                                       _close)  # Pattern Recognition
+        tech_factor_map['CDL3BLACKCROWS'] = talib.CDL3BLACKCROWS(_open, _high, _low,
+                                                                 _close)  # Pattern Recognition
+        tech_factor_map['CDL3INSIDE'] = talib.CDL3INSIDE(_open, _high, _low,
+                                                         _close)  # Pattern Recognition
+        tech_factor_map['CDL3LINESTRIKE'] = talib.CDL3LINESTRIKE(_open, _high, _low,
+                                                                 _close)  # Pattern Recognition
+        tech_factor_map['CDL3OUTSIDE'] = talib.CDL3OUTSIDE(_open, _high, _low,
+                                                           _close)  # Pattern Recognition
+        tech_factor_map['CDL3STARSINSOUTH'] = talib.CDL3STARSINSOUTH(_open, _high, _low,
+                                                                     _close)  # Pattern Recognition
+        tech_factor_map['CDL3WHITESOLDIERS'] = talib.CDL3WHITESOLDIERS(_open, _high, _low,
+                                                                       _close)  # Pattern Recognition
+        tech_factor_map['CDLADVANCEBLOCK'] = talib.CDLADVANCEBLOCK(_open, _high, _low,
+                                                                   _close)  # Pattern Recognition
+        tech_factor_map['CDLBELTHOLD'] = talib.CDLBELTHOLD(_open, _high, _low,
+                                                           _close)  # Pattern Recognition
+        tech_factor_map['CDLBREAKAWAY'] = talib.CDLBREAKAWAY(_open, _high, _low,
+                                                             _close)  # Pattern Recognition
+        tech_factor_map['CDLCLOSINGMARUBOZU'] = talib.CDLCLOSINGMARUBOZU(_open, _high, _low,
+                                                                         _close)  # Pattern Recognition
+        tech_factor_map['CDLCONCEALBABYSWALL'] = talib.CDLCONCEALBABYSWALL(_open, _high, _low,
+                                                                           _close)  # Pattern Recognition
+        tech_factor_map['CDLCOUNTERATTACK'] = talib.CDLCOUNTERATTACK(_open, _high, _low,
+                                                                     _close)  # Pattern Recognition
+        tech_factor_map['CDLDOJI'] = talib.CDLDOJI(_open, _high, _low,
+                                                   _close)  # Pattern Recognition
+        tech_factor_map['CDLDOJISTAR'] = talib.CDLDOJISTAR(_open, _high, _low,
+                                                           _close)  # Pattern Recognition
+        tech_factor_map['CDLDRAGONFLYDOJI'] = talib.CDLDRAGONFLYDOJI(_open, _high, _low,
+                                                                     _close)  # Pattern Recognition
+        tech_factor_map['CDLENGULFING'] = talib.CDLENGULFING(_open, _high, _low,
+                                                             _close)  # Pattern Recognition
+        tech_factor_map['CDLGAPSIDESIDEWHITE'] = talib.CDLGAPSIDESIDEWHITE(_open, _high, _low,
+                                                                           _close)  # Pattern Recognition
+        tech_factor_map['CDLGRAVESTONEDOJI'] = talib.CDLGRAVESTONEDOJI(_open, _high, _low,
+                                                                       _close)  # Pattern Recognition
+        tech_factor_map['CDLHAMMER'] = talib.CDLHAMMER(_open, _high, _low,
+                                                       _close)  # Pattern Recognition
+        tech_factor_map['CDLHANGINGMAN'] = talib.CDLHANGINGMAN(_open, _high, _low,
+                                                               _close)  # Pattern Recognition
+        tech_factor_map['CDLHARAMI'] = talib.CDLHARAMI(_open, _high, _low,
+                                                       _close)  # Pattern Recognition
+        tech_factor_map['CDLHARAMICROSS'] = talib.CDLHARAMICROSS(_open, _high, _low,
+                                                                 _close)  # Pattern Recognition
+        tech_factor_map['CDLHIKKAKE'] = talib.CDLHIKKAKE(_open, _high, _low,
+                                                         _close)  # Pattern Recognition
+        tech_factor_map['CDLHIKKAKEMOD'] = talib.CDLHIKKAKEMOD(_open, _high, _low,
+                                                               _close)  # Pattern Recognition
+        tech_factor_map['CDLHOMINGPIGEON'] = talib.CDLHOMINGPIGEON(_open, _high, _low,
+                                                                   _close)  # Pattern Recognition
+        tech_factor_map['CDLIDENTICAL3CROWS'] = talib.CDLIDENTICAL3CROWS(_open, _high, _low,
+                                                                         _close)  # Pattern Recognition
+        tech_factor_map['CDLINNECK'] = talib.CDLINNECK(_open, _high, _low,
+                                                       _close)  # Pattern Recognition
+        tech_factor_map['CDLINVERTEDHAMMER'] = talib.CDLINVERTEDHAMMER(_open, _high, _low,
+                                                                       _close)  # Pattern Recognition
+        tech_factor_map['CDLKICKING'] = talib.CDLKICKING(_open, _high, _low,
+                                                         _close)  # Pattern Recognition
+        tech_factor_map['CDLKICKINGBYLENGTH'] = talib.CDLKICKINGBYLENGTH(_open, _high, _low,
+                                                                         _close)  # Pattern Recognition
+        tech_factor_map['CDLLADDERBOTTOM'] = talib.CDLLADDERBOTTOM(_open, _high, _low,
+                                                                   _close)  # Pattern Recognition
+        tech_factor_map['CDLLONGLEGGEDDOJI'] = talib.CDLLONGLEGGEDDOJI(_open, _high, _low,
+                                                                       _close)  # Pattern Recognition
+        tech_factor_map['CDLLONGLINE'] = talib.CDLLONGLINE(_open, _high, _low,
+                                                           _close)  # Pattern Recognition
+        tech_factor_map['CDLMARUBOZU'] = talib.CDLMARUBOZU(_open, _high, _low,
+                                                           _close)  # Pattern Recognition
+        tech_factor_map['CDLONNECK'] = talib.CDLONNECK(_open, _high, _low,
+                                                       _close)  # Pattern Recognition
+        tech_factor_map['CDLPIERCING'] = talib.CDLPIERCING(_open, _high, _low,
+                                                           _close)  # Pattern Recognition
+        tech_factor_map['CDLRICKSHAWMAN'] = talib.CDLRICKSHAWMAN(_open, _high, _low,
+                                                                 _close)  # Pattern Recognition
+        tech_factor_map['CDLRISEFALL3METHODS'] = talib.CDLRISEFALL3METHODS(_open, _high, _low,
+                                                                           _close)  # Pattern Recognition
+        tech_factor_map['CDLSEPARATINGLINES'] = talib.CDLSEPARATINGLINES(_open, _high, _low,
+                                                                         _close)  # Pattern Recognition
+        tech_factor_map['CDLSHOOTINGSTAR'] = talib.CDLSHOOTINGSTAR(_open, _high, _low,
+                                                                   _close)  # Pattern Recognition
+        tech_factor_map['CDLSHORTLINE'] = talib.CDLSHORTLINE(_open, _high, _low,
+                                                             _close)  # Pattern Recognition
+        tech_factor_map['CDLSPINNINGTOP'] = talib.CDLSPINNINGTOP(_open, _high, _low,
+                                                                 _close)  # Pattern Recognition
+        tech_factor_map['CDLSTALLEDPATTERN'] = talib.CDLSTALLEDPATTERN(_open, _high, _low,
+                                                                       _close)  # Pattern Recognition
+        tech_factor_map['CDLSTICKSANDWICH'] = talib.CDLSTICKSANDWICH(_open, _high, _low,
+                                                                     _close)  # Pattern Recognition
+        tech_factor_map['CDLTAKURI'] = talib.CDLTAKURI(_open, _high, _low,
+                                                       _close)  # Pattern Recognition
+        tech_factor_map['CDLTASUKIGAP'] = talib.CDLTASUKIGAP(_open, _high, _low,
+                                                             _close)  # Pattern Recognition
+        tech_factor_map['CDLTHRUSTING'] = talib.CDLTHRUSTING(_open, _high, _low,
+                                                             _close)  # Pattern Recognition
+        tech_factor_map['CDLTRISTAR'] = talib.CDLTRISTAR(_open, _high, _low,
+                                                         _close)  # Pattern Recognition
+        tech_factor_map['CDLUNIQUE3RIVER'] = talib.CDLUNIQUE3RIVER(_open, _high, _low,
+                                                                   _close)  # Pattern Recognition
+        tech_factor_map['CDLUPSIDEGAP2CROWS'] = talib.CDLUPSIDEGAP2CROWS(_open, _high, _low,
+                                                                         _close)  # Pattern Recognition
+        tech_factor_map['CDLXSIDEGAP3METHODS'] = talib.CDLXSIDEGAP3METHODS(_open, _high, _low,
+                                                                           _close)  # Pattern Recognition
+        tech_factor_map['CDLABANDONEDBABY'] = talib.CDLABANDONEDBABY(_open, _high, _low, _close,
+                                                                     penetration=0.3)  # Pattern Recognition
+        tech_factor_map['CDLDARKCLOUDCOVER'] = talib.CDLDARKCLOUDCOVER(_open, _high, _low,
+                                                                       _close,
+                                                                       penetration=0.3)  # Pattern Recognition
+        tech_factor_map['CDLEVENINGDOJISTAR'] = talib.CDLEVENINGDOJISTAR(_open, _high, _low,
+                                                                         _close,
                                                                          penetration=0.3)  # Pattern Recognition
-        self.df_tech_factor['CDLDARKCLOUDCOVER'] = talib.CDLDARKCLOUDCOVER(self.open, self.high, self.low,
-                                                                           self.close,
-                                                                           penetration=0.3)  # Pattern Recognition
-        self.df_tech_factor['CDLEVENINGDOJISTAR'] = talib.CDLEVENINGDOJISTAR(self.open, self.high, self.low,
-                                                                             self.close,
-                                                                             penetration=0.3)  # Pattern Recognition
-        self.df_tech_factor['CDLEVENINGSTAR'] = talib.CDLEVENINGSTAR(self.open, self.high, self.low, self.close,
-                                                                     penetration=0.3)  # Pattern Recognition
-        self.df_tech_factor['CDLMATHOLD'] = talib.CDLMATHOLD(self.open, self.high, self.low, self.close,
-                                                             penetration=0.3)  # Pattern Recognition
-        self.df_tech_factor['CDLMORNINGDOJISTAR'] = talib.CDLMORNINGDOJISTAR(self.open, self.high, self.low,
-                                                                             self.close,
-                                                                             penetration=0.3)  # Pattern Recognition
-        self.df_tech_factor['CDLMORNINGSTAR'] = talib.CDLMORNINGSTAR(self.open, self.high, self.low, self.close,
-                                                                     penetration=0.3)  # Pattern Recognition
-        return self.df_tech_factor
+        tech_factor_map['CDLEVENINGSTAR'] = talib.CDLEVENINGSTAR(_open, _high, _low, _close,
+                                                                 penetration=0.3)  # Pattern Recognition
+        tech_factor_map['CDLMATHOLD'] = talib.CDLMATHOLD(_open, _high, _low, _close,
+                                                         penetration=0.3)  # Pattern Recognition
+        tech_factor_map['CDLMORNINGDOJISTAR'] = talib.CDLMORNINGDOJISTAR(_open, _high, _low,
+                                                                         _close,
+                                                                         penetration=0.3)  # Pattern Recognition
+        tech_factor_map['CDLMORNINGSTAR'] = talib.CDLMORNINGSTAR(_open, _high, _low, _close,
+                                                                 penetration=0.3)  # Pattern Recognition
+        return pd.DataFrame(tech_factor_map)
 
     def run(self):
-        self.df_tech_factor = self.df_data.groupby(self.code).apply(self.get_tech_factor)
+        df_tech_factor = self.df_data.groupby('code').apply(self.get_tech_factor)
+        return df_tech_factor
 
 
 def main():
+    glog.info(f"start calculating tech factor.")
     df_data = pd.read_pickle(data_config.stock_config['market_data_file'])
+    df_data = data_cleaner.data_replace(df_data.iloc[:1000], handle_constant=False)
+
     df_data = df_data.reset_index()
-    tf = TechFactors(df_data)
-    tf.run()
-    df_tech_factor = tf.df_tech_factor.sort_values(by=['date', 'code'], ascending=[True, True])
+    tfc = TechFactorsCalculator(df_data)
+    df_tech_factor = tfc.run()
+    df_tech_factor = df_tech_factor.sort_values(by=['date', 'code'], ascending=[True, True])
     df_tech_factor = df_tech_factor.set_index(['date', 'code'])
     df_tech_factor.to_pickle(factor_config.tech_factor_config['tech_factor_path'])
-    glog.info('End.')
 
 
 if __name__ == "__main__":
-    glog.info('Start program execution.')
     main()
